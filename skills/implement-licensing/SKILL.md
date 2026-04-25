@@ -5,14 +5,15 @@
 > https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: implement-licensing
-description: Integrate the licensing SDK into your .NET or React app — install packages, configure credentials, register services, and verify at runtime
+description: "Use when: integrating the Monaiq licensing SDK into a .NET or React app, installing packages, configuring credentials/endpoints, registering services/providers, or verifying runtime license validation."
+agent: monaiq
 auto-invoke:
   - "User wants to integrate licensing SDK into their application — has a product catalog already set up"
   - "User wants to add license validation to their project and needs package installation and configuration"
   - "User asks how to set up Monaiq licensing in code — not asking about pricing or catalog design"
 tags: [sdk, integration, licensing, setup, dotnet, react]
 category: integration
-allowed-tools: [register_or_login, profile, implement_base, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__implement_base]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, product, product_feature, implement_base, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__implement_base]
 argument-hint: "language (dotnet|react)"
 tier: 2
 invoked-by: [getting-started]
@@ -39,7 +40,7 @@ Before executing, check what's already set up. For the exact package names, conf
 
 <resource-ref uri="monaiq://sdk/{language}/setup"/>
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 Probe order:
 1. Are SDK packages installed? Look for the platform's SDK package name in the project manifest (`*.csproj` for .NET, `package.json` for React).
@@ -67,7 +68,7 @@ Guide an agent through integrating the Monaiq licensing SDK into a .NET or React
 
   <resource-ref uri="monaiq://sdk/{language}/setup"/>
 
-  <resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
   <resource-ref uri="monaiq://config/endpoints"/>
 
@@ -88,9 +89,9 @@ Before writing any code, determine how end-users will provide their license cred
 | No | Configuration-Based | Single organization license, one credential in config |
 | Yes | User-Managed | Multi-tenant SaaS, marketplace apps, per-user subscriptions |
 
-**Configuration-Based** — one license credential stored in application settings covers the entire application. The SDK's built-in configuration-based credential resolver handles this automatically. For the exact configuration shape and resolver type names, resolve `monaiq://platforms/{platform}/api-surface`.
+**Configuration-Based** — one license credential stored in application settings covers the entire application. The SDK's built-in configuration-based credential resolver handles this automatically. For the exact configuration shape and resolver type names, resolve `monaiq://platforms/api-surface/{platform}`.
 
-**User-Managed** — each user/tenant provides their own credential at runtime. You must implement a custom credential-provider type that resolves credentials from your storage (user profile, tenant settings, etc.). For the authoritative provider interface / hook signature, resolve `monaiq://platforms/{platform}/api-surface`. Consider the `implement_purchase_flow` tool for embedded in-app purchases that provision credentials automatically.
+**User-Managed** — each user/tenant provides their own credential at runtime. You must implement a custom credential-provider type that resolves credentials from your storage (user profile, tenant settings, etc.). For the authoritative provider interface / hook signature, resolve `monaiq://platforms/api-surface/{platform}`. Consider the `implement_purchase_flow` tool for embedded in-app purchases that provision credentials automatically.
 
 ## Step 2: Install Packages
 
@@ -122,7 +123,7 @@ Configure the licensing service with endpoint URIs and (for Configuration-Based 
 
 - For the authoritative property names and their types on the configuration surface, resolve:
 
-  <resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For **User-Managed** credential source, omit the encoded credential from configuration — it is resolved at runtime by your custom credential resolver (see Step 5).
 
@@ -136,7 +137,7 @@ Register the licensing services with your application's DI / provider graph.
 
 - For the exact extension-method / component signatures (including the generic overload used for user-managed credential resolvers), resolve:
 
-  <resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For **User-Managed** credential source, register your custom credential-resolver type via the generic registration overload documented in the platform's api-surface resource.
 
@@ -146,7 +147,7 @@ Integrate the licensing service into your application's runtime.
 
 - For the platform-specific type signatures — the service interface (.NET) or hook (React) used to request authorization — resolve:
 
-  <resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 - For the runtime wiring narrative — how to inject the service, when to call it, error-state handling — resolve:
 
@@ -154,7 +155,7 @@ Integrate the licensing service into your application's runtime.
 
 For known platform-specific pitfalls (null-semantics differences, provider remount behavior), resolve:
 
-<resource-ref uri="monaiq://platforms/{platform}/pitfalls"/>
+<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
 
 ## Step 7: Displaying License State
 
@@ -165,11 +166,11 @@ does **not** ship UI chrome. Render with your existing component library.
 - For the platform-specific signature (`LicensingClient.getState()` for React,
   `ILicenseStateProvider.GetState()` for .NET) and the `LicenseStateView` shape, resolve:
 
-  <resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 - For the canonical post-purchase refresh + snapshot pattern, resolve:
 
-  <resource-ref uri="monaiq://platforms/{platform}/manifest"/>
+  <resource-ref uri="monaiq://platforms/manifest/{platform}"/>
 
 Typical render patterns (implementer's choice, no SDK opinion):
 - **Badge** — show "Licensed · {planName}" or a compact status chip in the app header.
@@ -196,10 +197,14 @@ After completing the integration:
 
 - `monaiq://sdk/dotnet/setup` — .NET SDK setup narrative.
 - `monaiq://sdk/react/setup` — React SDK setup narrative.
-- `monaiq://platforms/dotnet/api-surface` — .NET method signatures and null semantics.
-- `monaiq://platforms/react/api-surface` — React method signatures and null semantics.
-- `monaiq://platforms/dotnet/pitfalls` — .NET known issues.
-- `monaiq://platforms/react/pitfalls` — React known issues (including provider-remount behavior).
+- `monaiq://platforms/api-surface/dotnet` — .NET method signatures and null semantics.
+- `monaiq://platforms/api-surface/react` — React method signatures and null semantics.
+- `monaiq://platforms/manifest/dotnet` — Full machine-readable .NET platform manifest.
+- `monaiq://platforms/manifest/react` — Full machine-readable React platform manifest.
+- `monaiq://platforms/pitfalls/dotnet` — .NET known issues.
+- `monaiq://platforms/pitfalls/react` — React known issues (including provider-remount behavior).
+- `monaiq://docs/anti-patterns/dotnet` — .NET licensing anti-patterns to avoid.
+- `monaiq://docs/anti-patterns/react` — React licensing anti-patterns to avoid.
 - `monaiq://domain/namespaces` — Authoritative namespace-to-type mappings.
 - `monaiq://domain/model` — Cross-platform entity relationships (offerings, licenses, features).
 - `monaiq://config/endpoints` — Canonical endpoint URLs.
@@ -223,8 +228,8 @@ When state detection shows SDK is already integrated, offer these options:
 | Package install fails | NuGet/npm error during SDK package installation | Check network connectivity and package source configuration. Retry with an explicit registry/source (`--source nuget.org` for .NET, clear npm cache for React). Resolve `monaiq://sdk/{language}/setup` for the exact package name and commands. |
 | Credential retrieval fails | `profile` tool returns an error | Verify the session is active via `register_or_login`. Re-authenticate if the session expired. |
 | Config binding fails | Licensing configuration exception at startup | Verify the configuration section name and key casing match the platform-specific configuration shape. Check that the credential field is not empty or malformed. Resolve `monaiq://sdk/{language}/setup` for the authoritative configuration keys. |
-| DI registration fails | Build error on the SDK's registration extension or provider component | Verify the package is installed and the correct imports/usings are present. Resolve `monaiq://platforms/{platform}/api-surface` for the authoritative extension-method or component signatures. |
-| Authorization call returns null | License validation fails at runtime | Retrieve a fresh credential from the `profile` tool. Resolve `monaiq://config/endpoints` to confirm service URIs are correct for the target environment. Resolve `monaiq://platforms/{platform}/pitfalls` for platform-specific null-semantics differences. |
+| DI registration fails | Build error on the SDK's registration extension or provider component | Verify the package is installed and the correct imports/usings are present. Resolve `monaiq://platforms/api-surface/{platform}` for the authoritative extension-method or component signatures. |
+| Authorization call returns null | License validation fails at runtime | Retrieve a fresh credential from the `profile` tool. Resolve `monaiq://config/endpoints` to confirm service URIs are correct for the target environment. Resolve `monaiq://platforms/pitfalls/{platform}` for platform-specific null-semantics differences. |
 
 SDK integration steps are non-destructive — each step modifies source files that can be edited again safely.
 </error-recovery>
@@ -253,7 +258,7 @@ Three options, in rough order of increasing security:
 
 For platform-specific persistence pitfalls (web storage semantics, lifecycle on desktop shells), resolve:
 
-<resource-ref uri="monaiq://platforms/{platform}/pitfalls"/>
+<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
 </brownfield>
 
 <success_criteria>

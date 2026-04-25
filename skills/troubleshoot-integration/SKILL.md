@@ -5,7 +5,8 @@
 > https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: troubleshoot-integration
-description: Fix SDK integration issues — diagnose setup errors, authentication failures, license validation problems, and usage tracking bugs
+description: "Use when: diagnosing Monaiq SDK integration issues, setup failures, authentication errors, license validation problems, checkout failures, or usage/consumption tracking bugs."
+agent: monaiq
 auto-invoke:
   - "User is having trouble integrating the Monaiq licensing SDK and sees errors or unexpected behavior"
   - "User encounters an error with licensing setup, authentication, or validation — not asking how to set up from scratch"
@@ -13,7 +14,7 @@ auto-invoke:
   - "User reports a specific error message, exception, or HTTP status code related to licensing"
 tags: [integration, troubleshooting, diagnostics, errors]
 category: integration
-allowed-tools: [register_or_login, profile, product, offering, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__offering]
+allowed-tools: [Read, Grep, Glob, register_or_login, profile, product, product_feature, offering, feature_offering, implement_base, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_base]
 argument-hint: "errorCategory (setup|auth|validation|consumption)"
 tier: 1
 invoked-by: [user]
@@ -40,9 +41,9 @@ Fetch the structured diagnostic decision trees for all 4 error categories:
 
 When the user's SDK language is known, also fetch the matching setup guide for cross-reference:
 
-<resource-ref uri="monaiq://sdk/csharp/setup"/>
-<resource-ref uri="monaiq://sdk/javascript/setup"/>
-<resource-ref uri="monaiq://sdk/typescript/setup"/>
+<resource-ref uri="monaiq://sdk/{language}/setup"/>
+
+Supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
 
 ## Step 1: Self-Diagnose
 

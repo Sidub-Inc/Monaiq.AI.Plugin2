@@ -1,6 +1,6 @@
 ---
 name: monaiq
-description: Use when adding licensing or monetization to an application — analyzes your codebase to identify licensable capabilities, designs pricing strategies and tier structures, builds the product/feature/offering catalog, integrates the Monaiq SDK (.NET or React), and troubleshoots license validation issues
+description: Use when: adding licensing or monetization to an application, analyzing licensable capabilities, designing pricing tiers, managing a Monaiq catalog, integrating the .NET or React SDK, implementing feature gates, adding checkout, or troubleshooting license validation.
 skills:
   - getting-started
   - manage-catalog
@@ -85,21 +85,23 @@ Full access to all MCP tools:
 </tools>
 
 <skills>
-All 11 skills are preloaded, covering the full discovery-to-integration journey:
+All 11 skills are preloaded, and every canonical Monaiq skill declares `agent: monaiq` in frontmatter so the intended custom-agent owner is explicit in source and generated plugin output.
+
+Each skill has a bounded responsibility; when a request crosses a boundary, route to the next skill instead of expanding the current skill's job:
 
 | Skill | Purpose | Mode Affinity |
 |-------|---------|---------------|
-| `getting-started` | Session setup, profile overview, intent routing | Both |
-| `manage-catalog` | Product → Feature → Offering → Assignment lifecycle | Implementation |
-| `implement-licensing` | End-to-end SDK integration (.NET/React) | Implementation |
-| `implement-feature` | Access and RateLimit feature check implementation | Implementation |
-| `implement-purchase-flow` | Embedded Stripe checkout integration | Implementation |
-| `troubleshoot-integration` | Diagnose and resolve SDK integration issues | Both |
-| `analyze-codebase` | Scan a project to identify licensable capabilities | Discovery |
-| `scenario-advisor` | Match identified capabilities to licensing scenarios | Discovery |
-| `design-monetization` | Design pricing tiers and offering structures | Discovery |
-| `domain-reference` | Answer domain concept questions via MCP resources | Discovery |
-| `profile-onboarding` | Profile configuration and reseller setup | Implementation |
+| `getting-started` | Onboard, detect account/catalog state, and choose the next workflow | Both |
+| `manage-catalog` | Create or modify products, features, offerings, and feature assignments | Implementation |
+| `implement-licensing` | Install/configure the SDK and verify baseline runtime license validation | Implementation |
+| `implement-feature` | Add access gates and rate-limit checks after SDK integration | Implementation |
+| `implement-purchase-flow` | Add checkout, result handling, credential persistence, and post-purchase refresh | Implementation |
+| `troubleshoot-integration` | Diagnose and resolve setup, auth, validation, checkout, or consumption issues | Both |
+| `analyze-codebase` | Scan source code to identify and classify licensable capabilities | Discovery |
+| `scenario-advisor` | Recommend licensing scenarios for app type and capability mix | Discovery |
+| `design-monetization` | Design pricing tiers and catalog-ready offering plans without creating entities | Discovery |
+| `domain-reference` | Explain domain concepts, namespaces, and entity relationships via MCP resources | Discovery |
+| `profile-onboarding` | View profile, credentials, onboarding state, and terms documents | Implementation |
 
 ### Progression Flows
 

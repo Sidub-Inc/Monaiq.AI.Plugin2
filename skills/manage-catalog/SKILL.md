@@ -1,13 +1,19 @@
+> [!WARNING]
+> **Requires monaiq MCP server attached.** This skill references MCP resources
+> via <resource-ref> blocks. Without the monaiq MCP server wired to your
+> agent, these references cannot be resolved. Connect the MCP server at
+> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: manage-catalog
-description: Set up your product catalog in two questions — define products, features, and pricing tiers with smart defaults
+description: "Use when: creating or managing a Monaiq product catalog, products, features, offerings, pricing tiers, and feature assignments after onboarding or monetization design."
+agent: monaiq
 auto-invoke:
   - "User wants to create or manage their product catalog"
   - "User wants to set up products, features, and offerings"
   - "User asks how to define pricing tiers or feature assignments"
 tags: [catalog, products, features, offerings, orchestration]
 category: catalog
-allowed-tools: [product, product_feature, offering, feature_offering, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering]
+allowed-tools: [register_or_login, profile, product, product_feature, offering, feature_offering, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering]
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -54,7 +60,9 @@ Build or modify a product catalog (products, features, pricing tiers, and featur
 
 - Active session — call `register_or_login` if not already authenticated
 - Your account needs to be approved for catalog management (Monaiq calls this having `ResellerStatus = Enabled`) — check via the `profile` tool
-- Fetch the domain model from `monaiq://domain/model` for entity context
+- Resolve the domain model for product, feature, offering, and assignment entity context:
+
+  <resource-ref uri="monaiq://domain/model"/>
 
 ## New Catalog Flow (Greenfield/Brownfield)
 

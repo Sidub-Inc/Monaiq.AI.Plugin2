@@ -1,6 +1,12 @@
+> [!WARNING]
+> **Requires monaiq MCP server attached.** This skill references MCP resources
+> via <resource-ref> blocks. Without the monaiq MCP server wired to your
+> agent, these references cannot be resolved. Connect the MCP server at
+> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: design-monetization
-description: Design your pricing strategy — choose between subscriptions, trials, perpetual licenses, and usage-based billing with a catalog-ready tier plan
+description: "Use when: designing pricing strategy, tiers, subscriptions, trials, perpetual licenses, usage-based billing, or catalog-ready offering plans; does not create catalog entities."
+agent: monaiq
 auto-invoke:
   - "User wants to design pricing tiers or a monetization strategy for their product"
   - "User asks 'how should I price this' or 'subscription vs perpetual' or 'what pricing model should I use'"
@@ -8,7 +14,7 @@ auto-invoke:
   - "User mentions pricing confusion, pricing strategy, or monetization approach"
 tags: [strategy, pricing, monetization, tiers, design]
 category: strategy
-allowed-tools: []
+allowed-tools: [register_or_login, product, product_feature, offering, feature_offering, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering]
 tier: 1
 invoked-by: [user, analyze-codebase, getting-started]
 ---
@@ -51,8 +57,11 @@ Guide an agent through designing a complete pricing tier structure for a user's 
 
 ## Prerequisites
 
-- Fetch `monaiq://patterns/pricing` for pricing pattern knowledge (base billing models, consumption overlay, industry compositions)
-- Fetch `monaiq://domain/model` for entity context (ProductOffering fields, FeatureOffering types)
+- Resolve pricing patterns and entity context before proposing tiers:
+
+  <resource-ref uri="monaiq://patterns/pricing"/>
+
+  <resource-ref uri="monaiq://domain/model"/>
 
 ## Step 1: Gather Context
 
@@ -79,7 +88,7 @@ For each feature in each tier, specify:
 - Usage limits (RateLimit features): quota value and time window (e.g., "1000 per hour")
 
 <!-- SEM-01-stopgap -->
-> **Unlimited tiers.** Set `RateLimit = 0` to represent an unlimited tier — no consumption cap is enforced for that feature. Paid tiers set explicit positive values (e.g. `1000` with `SampleSeconds = 3600` for 1000/hour).
+> **Unlimited tiers.** When calling the `feature_offering` MCP tool, set both `RateLimit` and `SampleSeconds` to the string `"unlimited"` for an uncapped assignment. The tool maps that input to the domain's zero-as-unlimited representation internally. Paid capped tiers set explicit positive values (e.g. `RateLimit = 1000` with `SampleSeconds = 3600` for 1000/hour).
 <!-- /SEM-01-stopgap -->
 
 Explain the rationale: why this many tiers, why these price points relative to each other, and which pricing pattern from `monaiq://patterns/pricing` this follows.

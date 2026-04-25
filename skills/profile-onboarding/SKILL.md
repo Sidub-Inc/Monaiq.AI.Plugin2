@@ -1,6 +1,7 @@
 ---
 name: profile-onboarding
-description: View your reseller profile, retrieve your license key and API credentials, and review terms of service
+description: "Use when: viewing Monaiq reseller profile status, retrieving SDK credentials, ApiKey, EncodedCredential, IssuerClientId, or reviewing terms and privacy documents."
+agent: monaiq
 auto-invoke:
   - "User wants to view their reseller profile or retrieve SDK credentials"
   - "User wants to review terms of service before accepting"

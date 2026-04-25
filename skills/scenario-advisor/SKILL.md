@@ -1,13 +1,19 @@
+> [!WARNING]
+> **Requires monaiq MCP server attached.** This skill references MCP resources
+> via <resource-ref> blocks. Without the monaiq MCP server wired to your
+> agent, these references cannot be resolved. Connect the MCP server at
+> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: scenario-advisor
-description: Find the right licensing model for your app — compare subscription, perpetual, trial, and usage-based options tailored to your application type
+description: "Use when: recommending a licensing model for an app type, comparing subscription, trial, perpetual, freemium, tiered, or usage-based scenarios before pricing design."
+agent: monaiq
 auto-invoke:
   - "User wants to know which licensing scenario fits their application"
   - "User asks what licensing model to use for their product"
   - "User wants licensing recommendations for their app type"
 tags: [discovery, scenarios, recommendations, strategy]
 category: discovery
-allowed-tools: []
+allowed-tools: [Read, Grep, Glob]
 argument-hint: "appType (saas|desktop|plugin|package|cli|api)"
 tier: 3
 invoked-by: [analyze-codebase, getting-started]
@@ -47,8 +53,11 @@ Map a user's application type to recommended licensing models from `monaiq://pat
 
 ## Prerequisites
 
-- Fetch `monaiq://patterns/scenarios` for building blocks (feature types, offering models, enforcement patterns, composition examples)
-- Fetch `monaiq://domain/model` for entity context
+- Resolve the scenario building blocks and domain model before presenting options:
+
+  <resource-ref uri="monaiq://patterns/scenarios"/>
+
+  <resource-ref uri="monaiq://domain/model"/>
 
 ## Step 1: Determine Application Type
 

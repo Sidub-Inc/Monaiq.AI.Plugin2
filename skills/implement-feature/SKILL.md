@@ -5,14 +5,15 @@
 > https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: implement-feature
-description: Add feature gates to your app — implement license checks for premium features (on/off) and usage limits (metered quotas)
+description: "Use when: adding Monaiq feature gates, access checks, premium feature enforcement, rate-limit assertions, consumption recording, or license feature checks to an SDK-integrated app."
+agent: monaiq
 auto-invoke:
   - "User wants to add feature gating to their application"
   - "User wants to implement license feature checks"
   - "User asks how to gate functionality by license features"
 tags: [sdk, features, licensing, entitlements, access, ratelimit]
 category: integration
-allowed-tools: [product, product_feature, implement_product_feature, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__implement_product_feature]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, product, product_feature, feature_offering, implement_product_feature, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_product_feature]
 argument-hint: "featureKey, featureType (access|ratelimit)"
 tier: 3
 invoked-by: [implement-licensing, manage-catalog]
@@ -38,7 +39,7 @@ getting-started → manage-catalog → implement-licensing → implement-feature
 Before implementing feature checks:
 1. Verify the SDK is integrated — look for the platform's licensing package in project manifests and for licensing DI / provider registration in the composition root.
 2. Call `product_feature` (list) — get available features and their types.
-3. Check existing source files for feature assertions — look for the platform's assertion attribute / hook usage as documented in `monaiq://platforms/{platform}/api-surface`.
+3. Check existing source files for feature assertions — look for the platform's assertion attribute / hook usage as documented in `monaiq://platforms/api-surface/{platform}`.
 
 Based on detected state:
 - SDK not integrated → Route to implement-licensing first
@@ -63,7 +64,7 @@ Guide an agent through adding license feature checks to a .NET or React applicat
 
   <resource-ref uri="monaiq://domain/namespaces"/>
 
-  <resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
   <resource-ref uri="monaiq://docs/anti-patterns/{platform}"/>
 
@@ -86,7 +87,7 @@ Identify the feature to gate and determine its type.
 
 For the authoritative field / property names on the platform-specific feature record, resolve:
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 **Feature-Type Decision Table (domain guidance — platform-neutral):**
 
@@ -96,7 +97,7 @@ For the authoritative field / property names on the platform-specific feature re
 | Use case | Premium content, feature flags, capability toggles | API rate limits, usage quotas, metered operations |
 | Cardinality | One assertion per check | Multi-step: retrieve → record → assert |
 
-**Critical:** Each feature type has its own specific assertion type. Mixing types causes runtime failures. Resolve `monaiq://platforms/{platform}/api-surface` for the authoritative assertion types — use the Access assertion for Access features, the RateLimit assertion for RateLimit features.
+**Critical:** Each feature type has its own specific assertion type. Mixing types causes runtime failures. Resolve `monaiq://platforms/api-surface/{platform}` for the authoritative assertion types — use the Access assertion for Access features, the RateLimit assertion for RateLimit features.
 
 For the enum/type values of the feature kind and how to inspect them programmatically, resolve:
 
@@ -110,7 +111,7 @@ Use when: a binary "allowed / not allowed" decision is sufficient (premium gate,
 
 For the platform-specific assertion type and the call sequence used to evaluate it:
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For runtime wiring narrative (where to place the check, how to render the denied state):
 
@@ -121,12 +122,12 @@ For runtime wiring narrative (where to place the check, how to render the denied
 Use when: usage must be metered and bounded (API rate limits, per-period quotas, consumption-based features). Pattern is always multi-step — retrieve the feature record, record consumption, then assert whether the limit is still respected.
 
 <!-- SEM-01-stopgap -->
-> **Zero means unlimited.** A feature configured with `RateLimit = 0` is unlimited — the rate-limit assertion always succeeds and no consumption counter is incremented. Use `0` deliberately for entitlements that should not be capped (e.g. unlimited tiers). Non-zero values cap consumption to that many requests within the configured `SampleSeconds` window.
+> **Unlimited assignments.** In the domain model, `RateLimit = 0` represents an unlimited entitlement. When creating or updating a rate-limit assignment through the `feature_offering` MCP tool, send both `RateLimit` and `SampleSeconds` as the string `"unlimited"`; the tool maps that to the internal zero representation. Non-zero capped values must be positive integers for both fields.
 <!-- /SEM-01-stopgap -->
 
 For the platform-specific feature retrieval, consumption recording, and assertion types:
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For the runtime wiring and error-handling narrative:
 
@@ -134,7 +135,7 @@ For the runtime wiring and error-handling narrative:
 
 For known platform-specific pitfalls (e.g., null semantics, provider remount, async hook reuse):
 
-<resource-ref uri="monaiq://platforms/{platform}/pitfalls"/>
+<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
 
 **Error-boundary pattern for rate-limit violations** (consumer-built — Monaiq ships
 the typed `RateLimitError`, you build the UI):
@@ -162,10 +163,12 @@ Build-and-verify guidance — compile the project, resolve missing namespaces ag
 
 - `monaiq://domain/model` — Entity relationships and feature-type hierarchy.
 - `monaiq://domain/namespaces` — Authoritative namespace-to-type mappings.
-- `monaiq://platforms/dotnet/api-surface` — .NET assertion types, method signatures, semantics.
-- `monaiq://platforms/react/api-surface` — React assertion types, hook signatures, semantics.
-- `monaiq://platforms/dotnet/pitfalls` — .NET known issues.
-- `monaiq://platforms/react/pitfalls` — React known issues (provider remount, async hook reuse).
+- `monaiq://platforms/api-surface/dotnet` — .NET assertion types, method signatures, semantics.
+- `monaiq://platforms/api-surface/react` — React assertion types, hook signatures, semantics.
+- `monaiq://platforms/pitfalls/dotnet` — .NET known issues.
+- `monaiq://platforms/pitfalls/react` — React known issues (provider remount, async hook reuse).
+- `monaiq://docs/anti-patterns/dotnet` — .NET anti-patterns for license checks and rate-limit enforcement.
+- `monaiq://docs/anti-patterns/react` — React anti-patterns for license checks and rate-limit enforcement.
 - `monaiq://sdk/dotnet/setup` — .NET SDK runtime wiring narrative.
 - `monaiq://sdk/react/setup` — React SDK runtime wiring narrative.
 
@@ -177,10 +180,10 @@ Build-and-verify guidance — compile the project, resolve missing namespaces ag
 | Failure Point | Symptom | Recovery Action |
 |--------------|---------|----------------|
 | Feature not found in catalog | `product_feature` list returns empty or missing feature | Verify the product code is correct. Route to `manage-catalog` to create missing features. |
-| Wrong assertion type used | Runtime type-mismatch error | Check the feature's kind — resolve `monaiq://platforms/{platform}/api-surface` for the correct assertion type per kind, and `monaiq://domain/model` for the kind enum. |
+| Wrong assertion type used | Runtime type-mismatch error | Check the feature's kind — resolve `monaiq://platforms/api-surface/{platform}` for the correct assertion type per kind, and `monaiq://domain/model` for the kind enum. |
 | Namespace import errors | Build fails with missing type references | Resolve `monaiq://domain/namespaces` and verify all imports match the authoritative reference. |
 | Assertion returns unexpected result | Feature check returns denied when it should be allowed | Verify the feature is assigned to the user's offering with the correct value (Allowed, not Denied). Check via the `feature_offering` tool. |
-| Consumption recording fails | Recording operation throws for RateLimit features | Verify the feature type is RateLimit (not Access). Check that the consumption amount is a positive number. Resolve `monaiq://platforms/{platform}/pitfalls` for platform-specific error modes. |
+| Consumption recording fails | Recording operation throws for RateLimit features | Verify the feature type is RateLimit (not Access). Check that the consumption amount is a positive number. Resolve `monaiq://platforms/pitfalls/{platform}` for platform-specific error modes. |
 
 Feature-gate code is additive — failed implementations can be corrected by editing the source file. No rollback needed.
 </error-recovery>

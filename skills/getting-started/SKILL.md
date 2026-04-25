@@ -1,6 +1,7 @@
 ---
 name: getting-started
-description: Get started with Monaiq — create an account, set up your first product, and choose your next step in under 5 minutes
+description: "Use when: onboarding a new or returning Monaiq user, establishing a session, checking profile/catalog state, choosing the next licensing workflow, or asking where to start."
+agent: monaiq
 auto-invoke:
   - "User wants to get started with Monaiq licensing and has not yet authenticated or set up products"
   - "User asks what Monaiq can do for them and needs an overview, not a specific task"

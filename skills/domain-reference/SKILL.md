@@ -1,13 +1,19 @@
+> [!WARNING]
+> **Requires monaiq MCP server attached.** This skill references MCP resources
+> via <resource-ref> blocks. Without the monaiq MCP server wired to your
+> agent, these references cannot be resolved. Connect the MCP server at
+> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: domain-reference
-description: Understand Monaiq concepts — explains entities like products, features, offerings, licenses, and how they relate to each other
+description: "Use when: explaining Monaiq domain concepts, entity relationships, FeatureKey semantics, namespace locations, products, features, offerings, licenses, credentials, or checkout terminology."
+agent: monaiq
 auto-invoke:
   - "User asks about Monaiq entity relationships or domain concepts"
   - "User wants to understand the licensing domain model"
   - "User asks what a FeatureKey, ProductOffering, or LicenseFeature is"
 tags: [domain, model, knowledge, reference]
 category: domain
-allowed-tools: []
+allowed-tools: [Read]
 argument-hint: "topic (entities|features|offerings|licenses)"
 tier: 3
 invoked-by: [getting-started, manage-catalog, implement-licensing]
@@ -34,9 +40,9 @@ Before answering:
 2. Determine if the question is about entities, relationships, field meanings, or namespace locations
 
 Based on detected topic:
-- Entity question → Fetch monaiq://domain/model, focus response on that entity
-- Namespace question → Fetch monaiq://domain/namespaces
-- Relationship question → Fetch both resources, explain the connection
+- Entity question → resolve `monaiq://domain/model`, focus response on that entity
+- Namespace question → resolve `monaiq://domain/namespaces`
+- Relationship question → resolve both resources, explain the connection
 </state-detection>
 
 <objective>
@@ -47,7 +53,9 @@ Answer questions about Monaiq domain concepts by fetching the domain model and n
 
 ## Step 1: Fetch Domain Model
 
-Fetch the `monaiq://domain/model` MCP resource. This contains comprehensive documentation of all entities, their relationships, key fields, polymorphic hierarchies, and invariants.
+Fetch the domain model MCP resource. This contains comprehensive documentation of all entities, their relationships, key fields, polymorphic hierarchies, and invariants.
+
+<resource-ref uri="monaiq://domain/model"/>
 
 **Key entities covered:**
 - Customer, Product, ProductFeature (polymorphic: Access/RateLimit)
@@ -57,7 +65,9 @@ Fetch the `monaiq://domain/model` MCP resource. This contains comprehensive docu
 
 ## Step 2: Fetch Namespace Reference
 
-Fetch the `monaiq://domain/namespaces` MCP resource. This provides authoritative type-to-namespace mappings for .NET and React, ensuring code references use the correct imports.
+Fetch the namespace reference MCP resource. This provides authoritative type-to-namespace mappings for .NET and React, ensuring code references use the correct imports.
+
+<resource-ref uri="monaiq://domain/namespaces"/>
 
 ## Step 3: Answer the User's Question
 

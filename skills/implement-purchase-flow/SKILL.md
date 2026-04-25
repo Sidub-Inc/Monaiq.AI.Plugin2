@@ -5,14 +5,15 @@
 > https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: implement-purchase-flow
-description: Add a buy button to your app — integrate Stripe checkout so users can purchase licenses without leaving your application
+description: "Use when: adding an in-app license purchase flow, buy button, Stripe checkout session, checkout result handling, credential persistence, or post-purchase SDK refresh."
+agent: monaiq
 auto-invoke:
   - "User wants to add in-app purchases or checkout to their application"
   - "User wants to integrate Stripe checkout for license purchasing"
   - "User asks how to embed a buy button or purchase flow"
 tags: [sdk, checkout, purchase, licensing, stripe]
 category: integration
-allowed-tools: [offering, feature_offering, profile, implement_purchase_flow, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__implement_purchase_flow]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, offering, feature_offering, implement_purchase_flow, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_purchase_flow]
 argument-hint: "language (dotnet|react)"
 tier: 3
 invoked-by: [implement-licensing, manage-catalog]
@@ -96,7 +97,7 @@ For the authoritative offering entity shape and checkout-request field names:
 
 <resource-ref uri="monaiq://domain/model"/>
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 ## Step 2: Backend Integration
 
@@ -104,7 +105,7 @@ Create a checkout session by calling the SDK's checkout service. The session car
 
 For the platform-specific checkout-service type, request/response shapes, and invocation pattern:
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For the runtime wiring narrative (where to inject the service, how to configure transport):
 
@@ -127,11 +128,11 @@ Persist the credential against the user identified by `CorrelationId` — this c
 
 For the platform-specific result type and retrieval call pattern:
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For platform-specific persistence patterns and pitfalls (e.g., web storage semantics, secure-string handling):
 
-<resource-ref uri="monaiq://platforms/{platform}/pitfalls"/>
+<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
 
 ### After purchase completes
 
@@ -147,7 +148,7 @@ handler, a redux thunk, an API-route response, a Blazor event handler. The SDK e
 
 For the platform-specific signatures:
 
-<resource-ref uri="monaiq://platforms/{platform}/manifest"/>
+<resource-ref uri="monaiq://platforms/manifest/{platform}"/>
 
 ## Step 4: Context Provider Wiring
 
@@ -162,7 +163,7 @@ Connect the purchased credential to the licensing SDK so feature checks work at 
 
 For the platform-specific provider interface, method signatures, and registration call:
 
-<resource-ref uri="monaiq://platforms/{platform}/api-surface"/>
+<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
 
 For the SDK wiring narrative, including where the provider slots into the composition root:
 
@@ -170,7 +171,7 @@ For the SDK wiring narrative, including where the provider slots into the compos
 
 For platform-specific pitfalls (provider lifetime, re-resolution on credential change, lazy initialization):
 
-<resource-ref uri="monaiq://platforms/{platform}/pitfalls"/>
+<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
 
 ## Verification
 
@@ -189,10 +190,14 @@ For platform-specific pitfalls (provider lifetime, re-resolution on credential c
 
 ## Related Resources
 
-- `monaiq://platforms/dotnet/api-surface` — .NET checkout service, request/result types, provider interface.
-- `monaiq://platforms/react/api-surface` — React client methods, provider component, context-hook signatures.
-- `monaiq://platforms/dotnet/pitfalls` — .NET pitfalls (DI lifetime, credential persistence).
-- `monaiq://platforms/react/pitfalls` — React pitfalls (provider remount, storage semantics).
+- `monaiq://platforms/api-surface/dotnet` — .NET checkout service, request/result types, provider interface.
+- `monaiq://platforms/api-surface/react` — React client methods, provider component, context-hook signatures.
+- `monaiq://platforms/manifest/dotnet` — Full machine-readable .NET platform manifest, including post-purchase state patterns.
+- `monaiq://platforms/manifest/react` — Full machine-readable React platform manifest, including post-purchase refresh patterns.
+- `monaiq://platforms/pitfalls/dotnet` — .NET pitfalls (DI lifetime, credential persistence).
+- `monaiq://platforms/pitfalls/react` — React pitfalls (provider remount, storage semantics).
+- `monaiq://docs/anti-patterns/dotnet` — .NET checkout and license-handling anti-patterns.
+- `monaiq://docs/anti-patterns/react` — React checkout and license-handling anti-patterns.
 - `monaiq://sdk/dotnet/setup` — .NET SDK wiring narrative.
 - `monaiq://sdk/react/setup` — React SDK wiring narrative.
 - `monaiq://config/endpoints` — Checkout/licensing endpoint base URLs.
@@ -206,7 +211,7 @@ For platform-specific pitfalls (provider lifetime, re-resolution on credential c
 | Failure Point | Symptom | Recovery Action |
 |--------------|---------|----------------|
 | Checkout session creation fails | Session-create call returns error | Verify `ApiKey` and `IssuerClientId` are correct (re-fetch from `profile`). Confirm the offering has Status = Public. |
-| Stripe redirect fails | User sees Stripe error page | Verify success and cancel URLs use HTTPS and include the session-ID placeholder expected by the checkout service (see `monaiq://platforms/{platform}/api-surface`). Confirm the offering's `BaseRate` and `Currency` are valid. |
+| Stripe redirect fails | User sees Stripe error page | Verify success and cancel URLs use HTTPS and include the session-ID placeholder expected by the checkout service (see `monaiq://platforms/api-surface/{platform}`). Confirm the offering's `BaseRate` and `Currency` are valid. |
 | Checkout-result retrieval returns no credential | Result poll returns an empty encoded-credential value | The checkout may not be complete yet — retry after a short delay. If persistent, verify the session ID is correct. |
 | Credential storage fails | License purchased but credential lost | Re-call the checkout-result retrieval with the same session ID; results are persistent server-side. |
 | Context provider wiring fails | Feature checks return null after purchase | Verify the custom context provider returns the stored credential. Check DI / composition-root registration against `monaiq://sdk/{language}/setup`. |

@@ -1,13 +1,19 @@
+> [!WARNING]
+> **Requires monaiq MCP server attached.** This skill references MCP resources
+> via <resource-ref> blocks. Without the monaiq MCP server wired to your
+> agent, these references cannot be resolved. Connect the MCP server at
+> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: analyze-codebase
-description: Scan your project to find features worth licensing — identifies premium capabilities and classifies each as a feature flag or usage limit
+description: "Use when: analyzing an existing codebase to identify licensable capabilities, premium features, API quotas, exports, integrations, or monetization candidates; classifies findings as access gates or rate limits."
+agent: monaiq
 auto-invoke:
   - "User wants to identify what capabilities in their app could be licensed or monetized"
   - "User asks what parts of their codebase are licensable or worth gating"
   - "User wants help figuring out what to monetize in their application — has existing code to analyze"
 tags: [discovery, analysis, codebase, capabilities]
 category: discovery
-allowed-tools: []
+allowed-tools: [Read, Grep, Glob, product_feature, mcp__plugin_monaiq_monaiq__product_feature]
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -47,8 +53,11 @@ Analyze a user's project to identify capabilities worth licensing. Read project 
 
 ## Prerequisites
 
-- Fetch `monaiq://patterns/scenarios` for feature type taxonomy and classification guidance
-- Fetch `monaiq://domain/model` for entity context
+- Resolve the feature type taxonomy and domain model before classifying capabilities:
+
+  <resource-ref uri="monaiq://patterns/scenarios"/>
+
+  <resource-ref uri="monaiq://domain/model"/>
 
 ## Step 1: Scan Project Structure
 
