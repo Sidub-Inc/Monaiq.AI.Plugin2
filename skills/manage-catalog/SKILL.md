@@ -107,7 +107,23 @@ Default assignment values:
 - Paid tiers: All feature flags (`ProductAccessFeature`) set to `Allowed`, usage limits (`ProductRateLimitFeature`) at user-specified or suggested quotas
 - Free/Trial tiers: Feature flags selectively `Allowed`/`Denied` based on user description, usage limits at reduced quotas
 
-**Read-back verification:** List offerings and feature assignments to confirm everything matches.
+**Required payload shape — `feature_offering` create for an access feature.** `ServiceAccessLevel` is required; omitting it is rejected by the API. Always send it explicitly:
+
+```json
+{
+  "__sidub_entityType": "ProductFeatureOffering.ServiceAccess",
+  "OfferingId": "<offering-id>",
+  "FeatureKey": "<feature-key>",
+  "ServiceAccessLevel": "Allowed"
+}
+```
+
+For rate-limit features, both `SampleSeconds` and `RateLimit` are required (use matching `"unlimited"` strings or matching positive integers — asymmetric combinations are rejected).
+
+**Read-back verification (mandatory after any create/update of paid-tier assignments):**
+1. Call `feature_offering` (list) for each paid offering.
+2. Assert every `ProductFeatureOffering.ServiceAccess` row has `ServiceAccessLevel: "Allowed"` (unless the user explicitly intended `Denied` for that tier).
+3. If any assignment shows `ServiceAccessLevel: "Denied"` that the user did not intend, stop and surface it to the user — this is the silent-failure mode where customers receive credentials but `AssertLicense` always returns `false`. Re-run `feature_offering` (update) with the correct level.
 
 ## Utility Workflows
 
