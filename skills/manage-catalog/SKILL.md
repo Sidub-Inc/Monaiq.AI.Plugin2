@@ -8,7 +8,7 @@ auto-invoke:
   - "User asks how to define pricing tiers or feature assignments"
 tags: [catalog, products, features, offerings, orchestration]
 category: catalog
-allowed-tools: [register_or_login, profile, product, product_feature, offering, feature_offering, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+allowed-tools: [register_or_login, profile, product, product_feature, offering, feature_offering, fetch_step_resources, monaiq_journal, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__fetch_step_resources, mcp__plugin_monaiq_monaiq__monaiq_journal]
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -50,6 +50,10 @@ Build or modify a product catalog (products, features, pricing tiers, and featur
 </objective>
 
 <process>
+
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `manage-catalog`. Backend catalog state wins; journal records decisions and outcomes only. Use `CHECKPOINT-CATALOG-STRUCTURE`, `CHECKPOINT-PRE-CATALOG-MUTATION`, and `CHECKPOINT-PRE-PUBLISH-OFFERING`; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
 ## Prerequisites
 

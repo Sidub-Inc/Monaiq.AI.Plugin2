@@ -8,7 +8,7 @@ auto-invoke:
   - "User wants help figuring out what to monetize in their application — has existing code to analyze"
 tags: [discovery, analysis, codebase, capabilities]
 category: discovery
-allowed-tools: [Read, Grep, Glob, product_feature, fetch_step_resources, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+allowed-tools: [Read, Grep, Glob, product_feature, fetch_step_resources, monaiq_journal, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__fetch_step_resources, mcp__plugin_monaiq_monaiq__monaiq_journal]
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -45,6 +45,10 @@ Analyze a user's project to identify capabilities worth licensing. Read project 
 </objective>
 
 <process>
+
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `analyze-codebase`. Use `CHECKPOINT-ANALYSIS-SCOPE` before broad scans or scope changes; record paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
 ## Prerequisites
 

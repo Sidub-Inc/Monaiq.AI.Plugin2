@@ -8,7 +8,7 @@ auto-invoke:
   - "User wants licensing recommendations for their app type"
 tags: [discovery, scenarios, recommendations, strategy]
 category: discovery
-allowed-tools: [Read, Grep, Glob, fetch_step_resources, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+allowed-tools: [Read, Grep, Glob, fetch_step_resources, monaiq_journal, mcp__plugin_monaiq_monaiq__fetch_step_resources, mcp__plugin_monaiq_monaiq__monaiq_journal]
 argument-hint: "appType (saas|desktop|plugin|package|cli|api)"
 tier: 3
 invoked-by: [analyze-codebase, getting-started]
@@ -45,6 +45,10 @@ Map a user's application type to recommended licensing models from `monaiq://pat
 </objective>
 
 <process>
+
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `scenario-advisor`. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
 ## Prerequisites
 

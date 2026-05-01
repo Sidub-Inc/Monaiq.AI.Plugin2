@@ -8,7 +8,7 @@ auto-invoke:
   - "User asks how to set up Monaiq licensing in code — not asking about pricing or catalog design"
 tags: [sdk, integration, licensing, setup, dotnet, react]
 category: integration
-allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, product, product_feature, implement_base, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__implement_base, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, product, product_feature, implement_base, fetch_step_resources, monaiq_journal, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__implement_base, mcp__plugin_monaiq_monaiq__fetch_step_resources, mcp__plugin_monaiq_monaiq__monaiq_journal]
 argument-hint: "platform (dotnet|dotnet/blazor-server|react|react/vite|react/nextjs)"
 tier: 2
 invoked-by: [getting-started]
@@ -55,10 +55,14 @@ Guide an agent through integrating the Monaiq licensing SDK into a .NET or React
 
 <process>
 
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-licensing`. Honor `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; present each through host-native ask and call `save_checkpoint` again with the result. At completion, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
+
 ## Prerequisites
 
 - Establish a session using the `register_or_login` tool.
-- Retrieve credentials via the `profile` tool — you need your license credential (the encoded license key returned by `profile`).
+- Determine the credential source. Reseller profile credentials (`ApiKey`, `IssuerClientId`) are used for checkout setup; application runtime `EncodedCredential` values come from completed purchases or an existing application credential store.
 - Resolve the platform-specific SDK setup narrative, API surface, and endpoint config:
 
   Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
@@ -208,7 +212,7 @@ After completing the integration:
 
 When state detection shows SDK is already integrated, offer these options:
 
-- **Credential recovery** — Call the `profile` tool to re-retrieve your license key. Useful when credentials are lost or need refreshing.
+- **Credential recovery** — Re-read the completed checkout result or the application's credential store to recover the purchased EncodedCredential. The profile tool only returns reseller checkout credentials.
 - **Update service URIs** — Modify licensing configuration to point to different environments (staging, production). Resolve `monaiq://config/endpoints` for the current authoritative URIs.
 - **Switch credential source** — Migrate from configuration-based to user-managed credentials (or vice versa). Involves implementing or removing a custom credential resolver; resolve `monaiq://sdk/{stack}/setup` for the migration narrative.
 - **Verify integration** — Run a quick health check: confirm packages are installed, configuration is present, DI is registered, and a test authorization call succeeds.
@@ -224,7 +228,7 @@ When state detection shows SDK is already integrated, offer these options:
 | Credential retrieval fails | `profile` tool returns an error | Verify the session is active via `register_or_login`. Re-authenticate if the session expired. |
 | Config binding fails | Licensing configuration exception at startup | Verify the configuration section name and key casing match the platform-specific configuration shape. Check that the credential field is not empty or malformed. Resolve `monaiq://sdk/{stack}/setup` for the authoritative configuration keys. |
 | DI registration fails | Build error on the SDK's registration extension or provider component | Verify the package is installed and the correct imports/usings are present. Resolve `monaiq://platforms/api-surface/{platform}` for the authoritative extension-method or component signatures. |
-| Authorization call returns null | License validation fails at runtime | Retrieve a fresh credential from the `profile` tool. Resolve `monaiq://config/endpoints` to confirm service URIs are correct for the target environment. Resolve `monaiq://platforms/pitfalls/{platform}` for platform-specific null-semantics differences. |
+| Authorization call returns null | License validation fails at runtime | Verify the purchased EncodedCredential is present in configuration or the application's credential store. Resolve `monaiq://config/endpoints` to confirm service URIs are correct for the target environment. Resolve `monaiq://platforms/pitfalls/{platform}` for platform-specific null-semantics differences. |
 
 SDK integration steps are non-destructive — each step modifies source files that can be edited again safely.
 </error-recovery>

@@ -9,7 +9,7 @@ auto-invoke:
   - "User asks 'where do I start' or 'how do I begin' with licensing"
 tags: [onboarding, getting-started, orchestration, state-detection]
 category: onboarding
-allowed-tools: [register_or_login, getting_started, profile, product, offering, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__getting_started, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__offering]
+allowed-tools: [register_or_login, getting_started, profile, product, offering, monaiq_journal, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__getting_started, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__monaiq_journal, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 tier: 1
 invoked-by: [user]
 ---
@@ -27,7 +27,7 @@ When users describe what they want using everyday language, map their terms to M
 | "subscription" / "recurring billing" | ProductOffering | LicenseClassification = Subscription |
 | "free trial" / "trial period" | ProductOffering | LicenseClassification = Trial |
 | "one-time purchase" / "perpetual license" | ProductOffering | LicenseClassification = Perpetual |
-| "license key" / "activation key" | EncodedCredential | Retrieved via the `profile` tool |
+| "license key" / "activation key" | EncodedCredential | Returned after purchasing an offering, then stored by the app |
 | "feature flag" / "premium feature" | ProductAccessFeature | Gated by FeatureKey |
 | "usage limit" / "API quota" / "rate limit" | ProductRateLimitFeature | Metered by FeatureKey |
 | "pricing tier" / "plan" | ProductOffering | Bundles features at a price point |
@@ -50,6 +50,10 @@ Routes to:
 </output-context>
 
 <process>
+
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `getting-started` unless resuming. Use `CHECKPOINT-RESUME`, `CHECKPOINT-STATE-CONFLICT`, and `CHECKPOINT-WORKFLOW-ROUTE`; call `skill_completed` before handing off to a specialist skill.
 
 ## Step 1: Authentication & User Detection
 

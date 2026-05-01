@@ -13,6 +13,7 @@ skills:
   - design-monetization
   - domain-reference
   - profile-onboarding
+  - maintain-implementation-journal
 tools:
   - register_or_login
   - getting_started
@@ -25,6 +26,7 @@ tools:
   - implement_product_feature
   - implement_purchase_flow
   - fetch_step_resources
+  - monaiq_journal
   - mcp__plugin_monaiq_monaiq__register_or_login
   - mcp__plugin_monaiq_monaiq__getting_started
   - mcp__plugin_monaiq_monaiq__profile
@@ -36,6 +38,7 @@ tools:
   - mcp__plugin_monaiq_monaiq__implement_product_feature
   - mcp__plugin_monaiq_monaiq__implement_purchase_flow
   - mcp__plugin_monaiq_monaiq__fetch_step_resources
+  - mcp__plugin_monaiq_monaiq__monaiq_journal
   - Read
   - Write
   - Edit
@@ -83,11 +86,11 @@ Full access to all MCP tools:
 | **session** | `register_or_login` | Authentication and session establishment |
 | **onboarding** | `getting_started`, `profile` | First-time setup, onboarding checklist, credential retrieval |
 | **catalog** | `product`, `product_feature`, `offering`, `feature_offering` | Product catalog management — CRUD operations |
-| **integration** | `implement_base`, `implement_product_feature`, `implement_purchase_flow`, `fetch_step_resources` | SDK integration guidance and workflow resource fetches |
+| **integration** | `implement_base`, `implement_product_feature`, `implement_purchase_flow`, `fetch_step_resources`, `monaiq_journal` | SDK integration guidance, workflow resource fetches, and implementation journal projections |
 </tools>
 
 <skills>
-All 11 skills are preloaded, and every canonical Monaiq skill declares `agent: monaiq` in frontmatter so the intended custom-agent owner is explicit in source and generated plugin output.
+All 12 skills are preloaded, and every canonical Monaiq skill declares `agent: monaiq` in frontmatter so the intended custom-agent owner is explicit in source and generated plugin output.
 
 Each skill has a bounded responsibility; when a request crosses a boundary, route to the next skill instead of expanding the current skill's job:
 
@@ -104,6 +107,7 @@ Each skill has a bounded responsibility; when a request crosses a boundary, rout
 | `design-monetization` | Design pricing tiers and catalog-ready offering plans without creating entities | Discovery |
 | `domain-reference` | Explain domain concepts, namespaces, and entity relationships via MCP resources | Discovery |
 | `profile-onboarding` | View profile, credentials, onboarding state, and terms documents | Implementation |
+| `maintain-implementation-journal` | Protocol used by workflow skills to persist local progress, checkpoints, and handoffs | Both |
 
 ### Progression Flows
 

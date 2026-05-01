@@ -1,6 +1,6 @@
 ---
 name: profile-onboarding
-description: "Use when: viewing Monaiq reseller profile status, retrieving SDK credentials, ApiKey, EncodedCredential, IssuerClientId, or reviewing terms and privacy documents."
+description: "Use when: viewing Monaiq reseller profile status, retrieving reseller ApiKey and IssuerClientId, or reviewing terms and privacy documents."
 agent: monaiq
 auto-invoke:
   - "User wants to view their reseller profile or retrieve SDK credentials"
@@ -8,7 +8,7 @@ auto-invoke:
   - "User asks about their onboarding status or account details"
 tags: [profile, onboarding, credentials, terms]
 category: onboarding
-allowed-tools: [register_or_login, profile, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile]
+allowed-tools: [register_or_login, profile, monaiq_journal, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__monaiq_journal, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 tier: 3
 invoked-by: [getting-started]
 ---
@@ -22,9 +22,9 @@ If invoked without upstream context, checks profile state directly.
 
 <output-context>
 Provides to downstream skills:
-- profileData: { issuerClientId, profileStatus, resellerStatus, encodedCredential (if retrieved) }
+- profileData: { issuerClientId, profileStatus, resellerStatus, apiKeyAvailable }
 
-Used by implement-licensing for credential setup and by implement-purchase-flow for checkout configuration.
+Used by implement-purchase-flow for checkout configuration. Purchased EncodedCredential values come from checkout results, not the reseller profile.
 </output-context>
 
 <state-detection>
@@ -40,10 +40,14 @@ Based on state:
 </state-detection>
 
 <objective>
-Guide an agent through reviewing a reseller profile, retrieving SDK credentials, and reading the Terms of Service and Privacy Policy. This covers three read-only steps. Terms acceptance (step 4) is a separate tool action — not part of this skill workflow.
+Guide an agent through reviewing a reseller profile, retrieving reseller checkout credentials, and reading the Terms of Service and Privacy Policy. This covers three read-only steps. Terms acceptance (step 4) is a separate tool action — not part of this skill workflow.
 </objective>
 
 <process>
+
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `profile-onboarding`. Use `CHECKPOINT-PRE-TERMS-ACCEPTANCE` before terms/profile acceptance; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
 ## Prerequisites
 
@@ -76,21 +80,21 @@ The `IssuerClientId` is the primary identifier for the reseller account. It is u
 
 ## Step 2: Retrieve Credentials
 
-Call the `profile` tool with `startStep=2` to retrieve SDK credentials.
+Call the `profile` tool with `startStep=2` to retrieve reseller credentials used for catalog and checkout operations.
 
 **Credential fields:**
 
 | Credential | Purpose | Where Used |
 |-----------|---------|------------|
 | `ApiKey` | Authenticates checkout API calls | `CreateCheckoutSession` and `GetCheckoutResult` API key parameter |
-| `EncodedCredential` | Encoded string containing license ID, service key, and access key | `LicensingServiceOptions.EncodedCredential` in SDK configuration |
 | `IssuerClientId` | Reseller identity for checkout requests | `CheckoutRequest.IssuerClientId` |
+
+`EncodedCredential` is not a reseller profile credential. It is produced after an offering is purchased and returned by checkout-result retrieval.
 
 **Security:** Do not persist the `ApiKey` to disk or commit it to source control. Use environment variables or a secrets manager for production deployments.
 
-**How credentials connect to SDK setup:**
+**How credentials connect to checkout setup:**
 
-- `EncodedCredential` → Goes into `LicensingServiceOptions` (see the `implement-licensing` skill)
 - `ApiKey` → Used when calling `ICheckoutService` methods (see the `implement-purchase-flow` skill)
 - `IssuerClientId` → Used in `CheckoutRequest` for embedded purchases
 
@@ -115,12 +119,12 @@ To accept terms, call the `profile` tool directly with `startStep=4` and `data={
 
 - `register_or_login` — Establish a session (prerequisite for all profile operations)
 - `profile` — The tool that executes each step of this workflow
-- `implement_base` — SDK integration (uses credentials from step 2)
+- `implement_base` — SDK integration (configures where purchased credentials are supplied at runtime)
 - `implement_purchase_flow` — Checkout integration (uses ApiKey and IssuerClientId from step 2)
 
 ## Utility Workflows
 
-- **Credential recovery**: Re-retrieve your license key (`EncodedCredential`) from your profile. Call `profile` tool with step 2 to see credentials.
+- **Credential recovery**: Re-retrieve reseller checkout credentials from your profile. Use purchase-flow checkout results or your application storage for purchased `EncodedCredential` values.
 - **View terms**: Review Terms of Service and Privacy Policy before accepting.
 - **Check approval status**: See current ResellerStatus and what to expect next.
 
@@ -128,7 +132,7 @@ To accept terms, call the `profile` tool directly with `startStep=4` and `data={
 
 <success_criteria>
 - Profile information is visible including `IssuerClientId`, `ProfileStatus`, and `ResellerStatus`
-- SDK credentials (`ApiKey`, `EncodedCredential`) are retrieved successfully
+- Reseller credentials (`ApiKey`, `IssuerClientId`) are retrieved successfully
 - Terms of Service and Privacy Policy are presented for review
 - Step 4 (terms acceptance) is understood as a separate tool action with `startStep=4`
 </success_criteria>

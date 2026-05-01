@@ -9,7 +9,7 @@ auto-invoke:
   - "User reports a specific error message, exception, or HTTP status code related to licensing"
 tags: [integration, troubleshooting, diagnostics, errors]
 category: integration
-allowed-tools: [Read, Grep, Glob, register_or_login, profile, product, product_feature, offering, feature_offering, implement_base, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_base, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+allowed-tools: [Read, Grep, Glob, register_or_login, profile, product, product_feature, offering, feature_offering, implement_base, fetch_step_resources, monaiq_journal, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_base, mcp__plugin_monaiq_monaiq__fetch_step_resources, mcp__plugin_monaiq_monaiq__monaiq_journal]
 argument-hint: "errorCategory (setup|auth|validation|consumption)"
 tier: 1
 invoked-by: [user]
@@ -27,6 +27,10 @@ Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from ava
 </objective>
 
 <process>
+
+## Journal Hook
+
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `troubleshoot-integration`. Use `CHECKPOINT-APPLY-FIX` before applying fixes, record `record_error` when useful, record paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
 ## Prerequisites
 
