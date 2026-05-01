@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: implement-licensing
 description: "Use when: integrating the Monaiq licensing SDK into a .NET or React app, installing packages, configuring credentials/endpoints, registering services/providers, or verifying runtime license validation."
@@ -13,8 +8,8 @@ auto-invoke:
   - "User asks how to set up Monaiq licensing in code — not asking about pricing or catalog design"
 tags: [sdk, integration, licensing, setup, dotnet, react]
 category: integration
-allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, product, product_feature, implement_base, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__implement_base]
-argument-hint: "language (dotnet|react)"
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, product, product_feature, implement_base, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__implement_base, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+argument-hint: "platform (dotnet|dotnet/blazor-server|react|react/vite|react/nextjs)"
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -22,14 +17,14 @@ invoked-by: [getting-started]
 <input-context>
 Receives from manage-catalog (or direct invocation):
 - catalogSpec (optional): { productCode, features: [{ key, type }], offerings: [{ code, classification }] } — if provided, skip catalog verification
-- language (optional): "dotnet" | "react" — if provided from user intent, skip language detection
+- platform (optional): "dotnet" | "dotnet/blazor-server" | "react" | "react/vite" | "react/nextjs" — if provided from user intent, skip platform detection
 
 If invoked without upstream context, the skill detects current state and asks the user for missing information.
 </input-context>
 
 <output-context>
 Provides to downstream skills (implement-feature, implement-purchase-flow):
-- sdkConfig: { language: "dotnet" | "react", credentialSource: "configuration" | "user-managed", serviceOptionsConfigured: boolean, diRegistered: boolean }
+- sdkConfig: { platform: "dotnet" | "dotnet/blazor-server" | "react" | "react/vite" | "react/nextjs", credentialSource: "configuration" | "user-managed", serviceOptionsConfigured: boolean, diRegistered: boolean }
 - targetFeatures: [{ featureKey, featureType }] — features available for gating (from catalog or user input)
 
 Chain: manage-catalog [catalogSpec] → implement-licensing [sdkConfig] → implement-feature
@@ -38,9 +33,9 @@ Chain: manage-catalog [catalogSpec] → implement-licensing [sdkConfig] → impl
 <state-detection>
 Before executing, check what's already set up. For the exact package names, configuration keys, DI extensions, and provider components to grep for, resolve:
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 Probe order:
 1. Are SDK packages installed? Look for the platform's SDK package name in the project manifest (`*.csproj` for .NET, `package.json` for React).
@@ -66,13 +61,13 @@ Guide an agent through integrating the Monaiq licensing SDK into a .NET or React
 - Retrieve credentials via the `profile` tool — you need your license credential (the encoded license key returned by `profile`).
 - Resolve the platform-specific SDK setup narrative, API surface, and endpoint config:
 
-  <resource-ref uri="monaiq://sdk/{language}/setup"/>
+  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://config/endpoints"/>
+  Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://docs/anti-patterns/{platform}"/>
+  Fetch `monaiq://docs/anti-patterns/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Interactive Step-by-Step Flow
 
@@ -95,9 +90,9 @@ Before writing any code, determine how end-users will provide their license cred
 
 ## Step 2: Install Packages
 
-Install the SDK package for the target language. For the installation command, package name, and transitive-dependency notes, resolve:
+Install the SDK package for the target stack. For the installation command, package name, and transitive-dependency notes, resolve:
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 > **Note (.NET):** Requires Sidub.Platform 1.10.38+. Consumers using this version or later do not need any `<ExcludeAssets>` Metalama workaround — the Metalama build tool is no longer a transitive dependency (DEV-08 / RT-6 resolved in Sidub.Platform.Core).
 
@@ -105,7 +100,7 @@ Install the SDK package for the target language. For the installation command, p
 
 For the authoritative type-to-namespace mappings (which imports expose credential types, service interfaces, feature types, and platform core), resolve:
 
-<resource-ref uri="monaiq://domain/namespaces"/>
+Fetch `monaiq://domain/namespaces` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 Use ONLY the namespaces from the reference. Do not guess or assume type locations.
 
@@ -115,15 +110,15 @@ Configure the licensing service with endpoint URIs and (for Configuration-Based 
 
 - For the platform-specific configuration shape (settings file keys, provider component props, environment variable wiring), resolve:
 
-  <resource-ref uri="monaiq://sdk/{language}/setup"/>
+  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 - For the endpoint URL values to populate into that configuration, resolve:
 
-  <resource-ref uri="monaiq://config/endpoints"/>
+  Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 - For the authoritative property names and their types on the configuration surface, resolve:
 
-  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For **User-Managed** credential source, omit the encoded credential from configuration — it is resolved at runtime by your custom credential resolver (see Step 5).
 
@@ -133,11 +128,11 @@ Register the licensing services with your application's DI / provider graph.
 
 - For the platform-specific registration pattern (service collection extensions in .NET, provider component in React), resolve:
 
-  <resource-ref uri="monaiq://sdk/{language}/setup"/>
+  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 - For the exact extension-method / component signatures (including the generic overload used for user-managed credential resolvers), resolve:
 
-  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For **User-Managed** credential source, register your custom credential-resolver type via the generic registration overload documented in the platform's api-surface resource.
 
@@ -147,15 +142,15 @@ Integrate the licensing service into your application's runtime.
 
 - For the platform-specific type signatures — the service interface (.NET) or hook (React) used to request authorization — resolve:
 
-  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 - For the runtime wiring narrative — how to inject the service, when to call it, error-state handling — resolve:
 
-  <resource-ref uri="monaiq://sdk/{language}/setup"/>
+  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For known platform-specific pitfalls (null-semantics differences, provider remount behavior), resolve:
 
-<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
+Fetch `monaiq://platforms/pitfalls/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 7: Displaying License State
 
@@ -166,11 +161,11 @@ does **not** ship UI chrome. Render with your existing component library.
 - For the platform-specific signature (`LicensingClient.getState()` for React,
   `ILicenseStateProvider.GetState()` for .NET) and the `LicenseStateView` shape, resolve:
 
-  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 - For the canonical post-purchase refresh + snapshot pattern, resolve:
 
-  <resource-ref uri="monaiq://platforms/manifest/{platform}"/>
+  Fetch `monaiq://platforms/manifest/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 Typical render patterns (implementer's choice, no SDK opinion):
 - **Badge** — show "Licensed · {planName}" or a compact status chip in the app header.
@@ -215,7 +210,7 @@ When state detection shows SDK is already integrated, offer these options:
 
 - **Credential recovery** — Call the `profile` tool to re-retrieve your license key. Useful when credentials are lost or need refreshing.
 - **Update service URIs** — Modify licensing configuration to point to different environments (staging, production). Resolve `monaiq://config/endpoints` for the current authoritative URIs.
-- **Switch credential source** — Migrate from configuration-based to user-managed credentials (or vice versa). Involves implementing or removing a custom credential resolver; resolve `monaiq://sdk/{language}/setup` for the migration narrative.
+- **Switch credential source** — Migrate from configuration-based to user-managed credentials (or vice versa). Involves implementing or removing a custom credential resolver; resolve `monaiq://sdk/{stack}/setup` for the migration narrative.
 - **Verify integration** — Run a quick health check: confirm packages are installed, configuration is present, DI is registered, and a test authorization call succeeds.
 
 </process>
@@ -225,9 +220,9 @@ When state detection shows SDK is already integrated, offer these options:
 
 | Failure Point | Symptom | Recovery Action |
 |--------------|---------|----------------|
-| Package install fails | NuGet/npm error during SDK package installation | Check network connectivity and package source configuration. Retry with an explicit registry/source (`--source nuget.org` for .NET, clear npm cache for React). Resolve `monaiq://sdk/{language}/setup` for the exact package name and commands. |
+| Package install fails | NuGet/npm error during SDK package installation | Check network connectivity and package source configuration. Retry with an explicit registry/source (`--source nuget.org` for .NET, clear npm cache for React). Resolve `monaiq://sdk/{stack}/setup` for the exact package name and commands. |
 | Credential retrieval fails | `profile` tool returns an error | Verify the session is active via `register_or_login`. Re-authenticate if the session expired. |
-| Config binding fails | Licensing configuration exception at startup | Verify the configuration section name and key casing match the platform-specific configuration shape. Check that the credential field is not empty or malformed. Resolve `monaiq://sdk/{language}/setup` for the authoritative configuration keys. |
+| Config binding fails | Licensing configuration exception at startup | Verify the configuration section name and key casing match the platform-specific configuration shape. Check that the credential field is not empty or malformed. Resolve `monaiq://sdk/{stack}/setup` for the authoritative configuration keys. |
 | DI registration fails | Build error on the SDK's registration extension or provider component | Verify the package is installed and the correct imports/usings are present. Resolve `monaiq://platforms/api-surface/{platform}` for the authoritative extension-method or component signatures. |
 | Authorization call returns null | License validation fails at runtime | Retrieve a fresh credential from the `profile` tool. Resolve `monaiq://config/endpoints` to confirm service URIs are correct for the target environment. Resolve `monaiq://platforms/pitfalls/{platform}` for platform-specific null-semantics differences. |
 
@@ -258,7 +253,7 @@ Three options, in rough order of increasing security:
 
 For platform-specific persistence pitfalls (web storage semantics, lifecycle on desktop shells), resolve:
 
-<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
+Fetch `monaiq://platforms/pitfalls/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 </brownfield>
 
 <success_criteria>

@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: design-monetization
 description: "Use when: designing pricing strategy, tiers, subscriptions, trials, perpetual licenses, usage-based billing, or catalog-ready offering plans; does not create catalog entities."
@@ -14,7 +9,7 @@ auto-invoke:
   - "User mentions pricing confusion, pricing strategy, or monetization approach"
 tags: [strategy, pricing, monetization, tiers, design]
 category: strategy
-allowed-tools: [register_or_login, product, product_feature, offering, feature_offering, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering]
+allowed-tools: [register_or_login, product, product_feature, offering, feature_offering, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 tier: 1
 invoked-by: [user, analyze-codebase, getting-started]
 ---
@@ -59,9 +54,9 @@ Guide an agent through designing a complete pricing tier structure for a user's 
 
 - Resolve pricing patterns and entity context before proposing tiers:
 
-  <resource-ref uri="monaiq://patterns/pricing"/>
+  Fetch `monaiq://patterns/pricing` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://domain/model"/>
+  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 1: Gather Context
 

@@ -24,6 +24,7 @@ tools:
   - implement_base
   - implement_product_feature
   - implement_purchase_flow
+  - fetch_step_resources
   - mcp__plugin_monaiq_monaiq__register_or_login
   - mcp__plugin_monaiq_monaiq__getting_started
   - mcp__plugin_monaiq_monaiq__profile
@@ -34,6 +35,7 @@ tools:
   - mcp__plugin_monaiq_monaiq__implement_base
   - mcp__plugin_monaiq_monaiq__implement_product_feature
   - mcp__plugin_monaiq_monaiq__implement_purchase_flow
+  - mcp__plugin_monaiq_monaiq__fetch_step_resources
   - Read
   - Write
   - Edit
@@ -68,7 +70,7 @@ Active when the user's intent involves creating products/features/offerings, int
 
 **Catalog** — Manage the full product-to-offering lifecycle via MCP tools. Create and configure products, define features (access gates and rate limits), set up offerings with billing intervals, and assign features to offerings with appropriate value configurations.
 
-**Integration** — Guide SDK setup and feature implementation for .NET and React applications. Walk users through package installation, credential configuration, and runtime license validation. Reference `monaiq://sdk/{language}/setup` for per-language setup guides and `monaiq://domain/namespaces` for type-to-namespace mappings.
+**Integration** — Guide SDK setup and feature implementation for .NET and React applications. Walk users through package installation, credential configuration, and runtime license validation. Reference `monaiq://sdk/{stack}/setup` for per-stack setup guides and `monaiq://domain/namespaces` for type-to-namespace mappings.
 
 **Operations** — Handle onboarding, session management, profile configuration, and troubleshooting. Use `monaiq://domain/model` for entity relationship context and `monaiq://troubleshooting` for troubleshooting decision trees.
 </domain>
@@ -81,7 +83,7 @@ Full access to all MCP tools:
 | **session** | `register_or_login` | Authentication and session establishment |
 | **onboarding** | `getting_started`, `profile` | First-time setup, onboarding checklist, credential retrieval |
 | **catalog** | `product`, `product_feature`, `offering`, `feature_offering` | Product catalog management — CRUD operations |
-| **integration** | `implement_base`, `implement_product_feature`, `implement_purchase_flow` | SDK integration guidance — step-by-step workflows |
+| **integration** | `implement_base`, `implement_product_feature`, `implement_purchase_flow`, `fetch_step_resources` | SDK integration guidance and workflow resource fetches |
 </tools>
 
 <skills>

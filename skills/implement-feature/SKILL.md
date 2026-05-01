@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: implement-feature
 description: "Use when: adding Monaiq feature gates, access checks, premium feature enforcement, rate-limit assertions, consumption recording, or license feature checks to an SDK-integrated app."
@@ -13,7 +8,7 @@ auto-invoke:
   - "User asks how to gate functionality by license features"
 tags: [sdk, features, licensing, entitlements, access, ratelimit]
 category: integration
-allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, product, product_feature, feature_offering, implement_product_feature, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_product_feature]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, product, product_feature, feature_offering, implement_product_feature, fetch_step_resources, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_product_feature, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 argument-hint: "featureKey, featureType (access|ratelimit)"
 tier: 3
 invoked-by: [implement-licensing, manage-catalog]
@@ -21,7 +16,7 @@ invoked-by: [implement-licensing, manage-catalog]
 
 <input-context>
 Receives from implement-licensing:
-- sdkConfig: { language, credentialSource, serviceOptionsConfigured, diRegistered } — confirms SDK is ready
+- sdkConfig: { platform, credentialSource, serviceOptionsConfigured, diRegistered } — confirms SDK is ready
 - targetFeatures (optional): [{ featureKey, featureType }] — pre-selected features to implement
 
 If invoked without upstream context, verifies SDK integration exists and discovers features from catalog.
@@ -60,13 +55,13 @@ Guide an agent through adding license feature checks to a .NET or React applicat
 - Product and features exist in the catalog — use the `product` and `product_feature` tools to verify.
 - Resolve the domain model, namespace table, and platform API surface:
 
-  <resource-ref uri="monaiq://domain/model"/>
+  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://domain/namespaces"/>
+  Fetch `monaiq://domain/namespaces` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://docs/anti-patterns/{platform}"/>
+  Fetch `monaiq://docs/anti-patterns/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Interactive Step-by-Step Flow
 
@@ -87,7 +82,7 @@ Identify the feature to gate and determine its type.
 
 For the authoritative field / property names on the platform-specific feature record, resolve:
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 **Feature-Type Decision Table (domain guidance — platform-neutral):**
 
@@ -101,9 +96,11 @@ For the authoritative field / property names on the platform-specific feature re
 
 For the enum/type values of the feature kind and how to inspect them programmatically, resolve:
 
-<resource-ref uri="monaiq://domain/model"/>
+Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 2: Implement Feature Check
+
+- Place all licensing-related string literals (feature keys, offering ids, redirect URLs) in a single constants module (e.g. `LicensingConstants.cs` for .NET, `licensingConstants.ts` for React). Reference them by symbol — do NOT inline the literal in business logic. This is mandatory (Phase 14 D-30).
 
 ### Feature Flag Check (Access — Binary Gate)
 
@@ -111,11 +108,11 @@ Use when: a binary "allowed / not allowed" decision is sufficient (premium gate,
 
 For the platform-specific assertion type and the call sequence used to evaluate it:
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For runtime wiring narrative (where to place the check, how to render the denied state):
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ### Usage Limit Check (RateLimit — Metered Consumption)
 
@@ -127,15 +124,15 @@ Use when: usage must be metered and bounded (API rate limits, per-period quotas,
 
 For the platform-specific feature retrieval, consumption recording, and assertion types:
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For the runtime wiring and error-handling narrative:
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For known platform-specific pitfalls (e.g., null semantics, provider remount, async hook reuse):
 
-<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
+Fetch `monaiq://platforms/pitfalls/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 **Error-boundary pattern for rate-limit violations** (consumer-built — Monaiq ships
 the typed `RateLimitError`, you build the UI):

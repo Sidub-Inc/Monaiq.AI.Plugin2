@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: implement-purchase-flow
 description: "Use when: adding an in-app license purchase flow, buy button, Stripe checkout session, checkout result handling, credential persistence, or post-purchase SDK refresh."
@@ -13,15 +8,15 @@ auto-invoke:
   - "User asks how to embed a buy button or purchase flow"
 tags: [sdk, checkout, purchase, licensing, stripe]
 category: integration
-allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, offering, feature_offering, implement_purchase_flow, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_purchase_flow]
-argument-hint: "language (dotnet|react)"
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, register_or_login, profile, offering, feature_offering, implement_purchase_flow, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_purchase_flow, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+argument-hint: "platform (dotnet|dotnet/blazor-server|react|react/vite|react/nextjs)"
 tier: 3
 invoked-by: [implement-licensing, manage-catalog]
 ---
 
 <input-context>
 Receives from implement-licensing or manage-catalog:
-- sdkConfig (optional): { language, credentialSource } — confirms SDK is ready
+- sdkConfig (optional): { platform, credentialSource } — confirms SDK is ready
 - catalogSpec (optional): { offerings: [{ code, classification, baseRate }] } — available offerings to sell
 
 If invoked without upstream context, verifies SDK integration and discovers offerings from catalog.
@@ -61,11 +56,11 @@ Guide an agent through adding an embedded purchase flow to a .NET or React appli
 - Published offerings exist — use the `offering` and `feature_offering` tools to browse the catalog.
 - Resolve the SDK setup narrative and checkout endpoint configuration:
 
-  <resource-ref uri="monaiq://sdk/{language}/setup"/>
+  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://config/endpoints"/>
+  Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://docs/anti-patterns/{platform}"/>
+  Fetch `monaiq://docs/anti-patterns/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Interactive Step-by-Step Flow
 
@@ -95,9 +90,9 @@ Use a stable, unique identifier — user ID, tenant ID, or a composite key.
 
 For the authoritative offering entity shape and checkout-request field names:
 
-<resource-ref uri="monaiq://domain/model"/>
+Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 2: Backend Integration
 
@@ -105,15 +100,15 @@ Create a checkout session by calling the SDK's checkout service. The session car
 
 For the platform-specific checkout-service type, request/response shapes, and invocation pattern:
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For the runtime wiring narrative (where to inject the service, how to configure transport):
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For the checkout endpoint base URL (do not hardcode — resolve at configuration time):
 
-<resource-ref uri="monaiq://config/endpoints"/>
+Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 **Security notes (platform-neutral):**
 - Never expose the `ApiKey` to frontend code in production — proxy through your backend.
@@ -128,11 +123,11 @@ Persist the credential against the user identified by `CorrelationId` — this c
 
 For the platform-specific result type and retrieval call pattern:
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For platform-specific persistence patterns and pitfalls (e.g., web storage semantics, secure-string handling):
 
-<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
+Fetch `monaiq://platforms/pitfalls/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ### After purchase completes
 
@@ -148,7 +143,7 @@ handler, a redux thunk, an API-route response, a Blazor event handler. The SDK e
 
 For the platform-specific signatures:
 
-<resource-ref uri="monaiq://platforms/manifest/{platform}"/>
+Fetch `monaiq://platforms/manifest/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 4: Context Provider Wiring
 
@@ -163,15 +158,15 @@ Connect the purchased credential to the licensing SDK so feature checks work at 
 
 For the platform-specific provider interface, method signatures, and registration call:
 
-<resource-ref uri="monaiq://platforms/api-surface/{platform}"/>
+Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For the SDK wiring narrative, including where the provider slots into the composition root:
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 For platform-specific pitfalls (provider lifetime, re-resolution on credential change, lazy initialization):
 
-<resource-ref uri="monaiq://platforms/pitfalls/{platform}"/>
+Fetch `monaiq://platforms/pitfalls/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Verification
 
@@ -214,7 +209,7 @@ For platform-specific pitfalls (provider lifetime, re-resolution on credential c
 | Stripe redirect fails | User sees Stripe error page | Verify success and cancel URLs use HTTPS and include the session-ID placeholder expected by the checkout service (see `monaiq://platforms/api-surface/{platform}`). Confirm the offering's `BaseRate` and `Currency` are valid. |
 | Checkout-result retrieval returns no credential | Result poll returns an empty encoded-credential value | The checkout may not be complete yet — retry after a short delay. If persistent, verify the session ID is correct. |
 | Credential storage fails | License purchased but credential lost | Re-call the checkout-result retrieval with the same session ID; results are persistent server-side. |
-| Context provider wiring fails | Feature checks return null after purchase | Verify the custom context provider returns the stored credential. Check DI / composition-root registration against `monaiq://sdk/{language}/setup`. |
+| Context provider wiring fails | Feature checks return null after purchase | Verify the custom context provider returns the stored credential. Check DI / composition-root registration against `monaiq://sdk/{stack}/setup`. |
 
 Checkout sessions are idempotent — creating a new session for the same offering is safe. Completed purchases are recorded server-side and can be recovered.
 </error-recovery>

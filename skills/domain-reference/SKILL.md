@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: domain-reference
 description: "Use when: explaining Monaiq domain concepts, entity relationships, FeatureKey semantics, namespace locations, products, features, offerings, licenses, credentials, or checkout terminology."
@@ -13,7 +8,7 @@ auto-invoke:
   - "User asks what a FeatureKey, ProductOffering, or LicenseFeature is"
 tags: [domain, model, knowledge, reference]
 category: domain
-allowed-tools: [Read]
+allowed-tools: [Read, fetch_step_resources, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 argument-hint: "topic (entities|features|offerings|licenses)"
 tier: 3
 invoked-by: [getting-started, manage-catalog, implement-licensing]
@@ -55,7 +50,7 @@ Answer questions about Monaiq domain concepts by fetching the domain model and n
 
 Fetch the domain model MCP resource. This contains comprehensive documentation of all entities, their relationships, key fields, polymorphic hierarchies, and invariants.
 
-<resource-ref uri="monaiq://domain/model"/>
+Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 **Key entities covered:**
 - Customer, Product, ProductFeature (polymorphic: Access/RateLimit)
@@ -67,7 +62,7 @@ Fetch the domain model MCP resource. This contains comprehensive documentation o
 
 Fetch the namespace reference MCP resource. This provides authoritative type-to-namespace mappings for .NET and React, ensuring code references use the correct imports.
 
-<resource-ref uri="monaiq://domain/namespaces"/>
+Fetch `monaiq://domain/namespaces` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 3: Answer the User's Question
 

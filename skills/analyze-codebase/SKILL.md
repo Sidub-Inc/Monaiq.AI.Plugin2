@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: analyze-codebase
 description: "Use when: analyzing an existing codebase to identify licensable capabilities, premium features, API quotas, exports, integrations, or monetization candidates; classifies findings as access gates or rate limits."
@@ -13,7 +8,7 @@ auto-invoke:
   - "User wants help figuring out what to monetize in their application — has existing code to analyze"
 tags: [discovery, analysis, codebase, capabilities]
 category: discovery
-allowed-tools: [Read, Grep, Glob, product_feature, mcp__plugin_monaiq_monaiq__product_feature]
+allowed-tools: [Read, Grep, Glob, product_feature, fetch_step_resources, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -55,9 +50,9 @@ Analyze a user's project to identify capabilities worth licensing. Read project 
 
 - Resolve the feature type taxonomy and domain model before classifying capabilities:
 
-  <resource-ref uri="monaiq://patterns/scenarios"/>
+  Fetch `monaiq://patterns/scenarios` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://domain/model"/>
+  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 1: Scan Project Structure
 

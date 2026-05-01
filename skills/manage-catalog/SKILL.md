@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: manage-catalog
 description: "Use when: creating or managing a Monaiq product catalog, products, features, offerings, pricing tiers, and feature assignments after onboarding or monetization design."
@@ -13,7 +8,7 @@ auto-invoke:
   - "User asks how to define pricing tiers or feature assignments"
 tags: [catalog, products, features, offerings, orchestration]
 category: catalog
-allowed-tools: [register_or_login, profile, product, product_feature, offering, feature_offering, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering]
+allowed-tools: [register_or_login, profile, product, product_feature, offering, feature_offering, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 tier: 2
 invoked-by: [getting-started]
 ---
@@ -62,7 +57,7 @@ Build or modify a product catalog (products, features, pricing tiers, and featur
 - Your account needs to be approved for catalog management (Monaiq calls this having `ResellerStatus = Enabled`) — check via the `profile` tool
 - Resolve the domain model for product, feature, offering, and assignment entity context:
 
-  <resource-ref uri="monaiq://domain/model"/>
+  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## New Catalog Flow (Greenfield/Brownfield)
 
@@ -106,6 +101,8 @@ For each pricing tier (called an Offering in Monaiq), apply smart defaults:
 Default assignment values:
 - Paid tiers: All feature flags (`ProductAccessFeature`) set to `Allowed`, usage limits (`ProductRateLimitFeature`) at user-specified or suggested quotas
 - Free/Trial tiers: Feature flags selectively `Allowed`/`Denied` based on user description, usage limits at reduced quotas
+
+- Catalog identifiers (offering ids, product ids, feature keys) referenced in code MUST live in a constants module. Inline string literals are forbidden (D-30).
 
 **Required payload shape — `feature_offering` create for an access feature.** `ServiceAccessLevel` is required; omitting it is rejected by the API. Always send it explicitly:
 

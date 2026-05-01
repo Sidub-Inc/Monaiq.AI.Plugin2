@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: troubleshoot-integration
 description: "Use when: diagnosing Monaiq SDK integration issues, setup failures, authentication errors, license validation problems, checkout failures, or usage/consumption tracking bugs."
@@ -14,7 +9,7 @@ auto-invoke:
   - "User reports a specific error message, exception, or HTTP status code related to licensing"
 tags: [integration, troubleshooting, diagnostics, errors]
 category: integration
-allowed-tools: [Read, Grep, Glob, register_or_login, profile, product, product_feature, offering, feature_offering, implement_base, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_base]
+allowed-tools: [Read, Grep, Glob, register_or_login, profile, product, product_feature, offering, feature_offering, implement_base, fetch_step_resources, mcp__plugin_monaiq_monaiq__register_or_login, mcp__plugin_monaiq_monaiq__profile, mcp__plugin_monaiq_monaiq__product, mcp__plugin_monaiq_monaiq__product_feature, mcp__plugin_monaiq_monaiq__offering, mcp__plugin_monaiq_monaiq__feature_offering, mcp__plugin_monaiq_monaiq__implement_base, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 argument-hint: "errorCategory (setup|auth|validation|consumption)"
 tier: 1
 invoked-by: [user]
@@ -37,11 +32,11 @@ Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from ava
 
 Fetch the structured diagnostic decision trees for all 4 error categories:
 
-<resource-ref uri="monaiq://troubleshooting"/>
+Fetch `monaiq://troubleshooting` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-When the user's SDK language is known, also fetch the matching setup guide for cross-reference:
+When the user's SDK stack is known, also fetch the matching setup guide for cross-reference:
 
-<resource-ref uri="monaiq://sdk/{language}/setup"/>
+Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 Supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
 

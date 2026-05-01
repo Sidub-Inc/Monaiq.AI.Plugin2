@@ -1,8 +1,3 @@
-> [!WARNING]
-> **Requires monaiq MCP server attached.** This skill references MCP resources
-> via <resource-ref> blocks. Without the monaiq MCP server wired to your
-> agent, these references cannot be resolved. Connect the MCP server at
-> https://api.monaiq.com/runtime/webhooks/mcp before invoking this skill.
 ---
 name: scenario-advisor
 description: "Use when: recommending a licensing model for an app type, comparing subscription, trial, perpetual, freemium, tiered, or usage-based scenarios before pricing design."
@@ -13,7 +8,7 @@ auto-invoke:
   - "User wants licensing recommendations for their app type"
 tags: [discovery, scenarios, recommendations, strategy]
 category: discovery
-allowed-tools: [Read, Grep, Glob]
+allowed-tools: [Read, Grep, Glob, fetch_step_resources, mcp__plugin_monaiq_monaiq__fetch_step_resources]
 argument-hint: "appType (saas|desktop|plugin|package|cli|api)"
 tier: 3
 invoked-by: [analyze-codebase, getting-started]
@@ -55,9 +50,9 @@ Map a user's application type to recommended licensing models from `monaiq://pat
 
 - Resolve the scenario building blocks and domain model before presenting options:
 
-  <resource-ref uri="monaiq://patterns/scenarios"/>
+  Fetch `monaiq://patterns/scenarios` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-  <resource-ref uri="monaiq://domain/model"/>
+  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
 ## Step 1: Determine Application Type
 
