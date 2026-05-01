@@ -49,11 +49,21 @@ Routes to:
 - analyze-codebase: receives { userScenario, detectedState }
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, applies returned `.monaiq/*` file operations, calls `skill_started`, and enforces `CHECKPOINT-WORKFLOW-START` before consequential follow-up actions.
+</monaiq-agent-handoff>
+
 <process>
 
 ## Journal Hook
 
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `getting-started` unless resuming. Use `CHECKPOINT-RESUME`, `CHECKPOINT-STATE-CONFLICT`, and `CHECKPOINT-WORKFLOW-ROUTE`; call `skill_completed` before handing off to a specialist skill.
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, call `monaiq_journal init` when state is missing, apply returned `.monaiq/*` file operations after path validation, then call `skill_started` for `getting-started` unless resuming. Save and present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, and intended outcome before Step 2 state detection, Quick Start catalog setup, or routing. Use `CHECKPOINT-RESUME`, `CHECKPOINT-STATE-CONFLICT`, and `CHECKPOINT-WORKFLOW-ROUTE`; call `skill_completed` before handing off to a specialist skill.
+
+`getting-started` is intake/router. It must not perform specialist catalog, SDK integration, feature-gating, purchase-flow, or troubleshooting implementation workflows itself.
 
 ## Step 1: Authentication & User Detection
 
@@ -139,6 +149,8 @@ Collapse the full onboarding journey to 2 user interactions with smart defaults:
 - Map the user's choice to an offering structure with smart defaults.
 
 After both interactions, route to `manage-catalog` with the pre-filled context (product name, features, offering structure) so the catalog can be created with minimal additional input.
+
+Quick Start must not create or update catalog entities directly. Route to `manage-catalog` before the first `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete call; if a host forces inline continuation, enforce `CHECKPOINT-PRE-CATALOG-MUTATION` and record the user's result before any catalog mutation tool call.
 
 ## Step 5: Intent Routing (Fallback)
 

@@ -25,7 +25,7 @@ allowed-tools:
 <journal-contract>
 Maintain a `.monaiq/` folder at the consumer project root while Monaiq skills guide implementation. The canonical files are `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, `.monaiq/CHECKPOINTS/*.md`, and optional `.monaiq/config.json`.
 
-Use `monaiq_journal` as the canonical write path. It returns `fileOperations` for the calling agent to apply locally under the consumer project root. Direct agent writes are discouraged but tolerated for narrative gaps the action enum does not yet cover.
+Use `monaiq_journal` as the canonical write path. It returns `fileOperations` for the calling agent to apply locally under the consumer project root. Direct agent writes are not a replacement fallback when the hosted tool is unavailable or stale.
 
 Record skill lifecycle, consequential decisions, todos, questions, checkpoint prompts/results, errors, and file-change summaries. File-change summaries contain paths and intent only, not file contents.
 </journal-contract>
@@ -39,8 +39,12 @@ If state exists, read the bounded resume packet. When `currentSkill` is set, sum
 <checkpoint-protocol>
 When a step declares a `CHECKPOINT-*` checkpoint, call `monaiq_journal save_checkpoint` with the checkpoint name, summary, question, and options. Present the returned envelope through the host-native ask mechanism, such as `vscode_askQuestions`, Claude `ask`, or Codex `AskUserQuestion`.
 
-Do not treat an envelope as approval. Approval exists only after the user responds and a follow-up `save_checkpoint` call records the `result` payload. Required checkpoint examples include `CHECKPOINT-STATE-CONFLICT`, `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, `CHECKPOINT-PRE-CREDENTIAL-WRITE`, `CHECKPOINT-FEATURE-SELECTION`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`, and `CHECKPOINT-SKILL-COMPLETE`.
+Do not treat an envelope as approval. Approval exists only after the user responds and a follow-up `save_checkpoint` call records the `result` payload. Required checkpoint examples include `CHECKPOINT-WORKFLOW-START`, `CHECKPOINT-STATE-CONFLICT`, `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, `CHECKPOINT-PRE-CATALOG-MUTATION`, `CHECKPOINT-PRE-CREDENTIAL-WRITE`, `CHECKPOINT-FEATURE-SELECTION`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`, and `CHECKPOINT-SKILL-COMPLETE`.
 </checkpoint-protocol>
+
+<degraded-orchestration>
+If the custom agent cannot be activated, the compatibility fallback still uses this protocol. If the MCP journal tool is missing/stale, warn the user and stop before consequential work rather than writing `.monaiq` directly.
+</degraded-orchestration>
 
 <resume-and-reconciliation>
 Backend wins for catalog, profile, license, billing, product, offering, and credential facts. Local wins for journey progress, implementation decisions, todos, questions, checkpoints, user preferences, and handoff notes.

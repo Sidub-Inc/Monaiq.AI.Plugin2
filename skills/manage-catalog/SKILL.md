@@ -30,6 +30,14 @@ Provides to downstream skills:
 Chain: manage-catalog [catalogSpec] → implement-licensing [sdkConfig] → implement-feature
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+</monaiq-agent-handoff>
+
 <state-detection>
 Before executing any workflow, check current catalog state:
 1. Call `product` (list) — check existing products
@@ -54,6 +62,8 @@ Build or modify a product catalog (products, features, pricing tiers, and featur
 ## Journal Hook
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `manage-catalog`. Backend catalog state wins; journal records decisions and outcomes only. Use `CHECKPOINT-CATALOG-STRUCTURE`, `CHECKPOINT-PRE-CATALOG-MUTATION`, and `CHECKPOINT-PRE-PUBLISH-OFFERING`; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
+
+`CHECKPOINT-PRE-CATALOG-MUTATION` is mandatory before `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete calls. The checkpoint must summarize intended entities and pricing/assignment impact, and the workflow must record the user's result before tool calls run.
 
 ## Prerequisites
 

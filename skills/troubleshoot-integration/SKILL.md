@@ -22,6 +22,14 @@ Provides to requesting context:
 This is a support entry point — users come here directly when something is broken.
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+</monaiq-agent-handoff>
+
 <objective>
 Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from available context (error messages, code, configuration), then fall back to interactive diagnostic questions if the category or resolution can't be determined autonomously. Reference the troubleshooting resource as the diagnostic knowledge source.
 </objective>
@@ -30,7 +38,9 @@ Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from ava
 
 ## Journal Hook
 
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `troubleshoot-integration`. Use `CHECKPOINT-APPLY-FIX` before applying fixes, record `record_error` when useful, record paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `troubleshoot-integration`. Use `CHECKPOINT-APPLY-FIX` before applying diagnostic fixes or recommendations, record `record_error` when useful, record paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
+
+Gate selection: behavior-changing fixes use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`; read-only or diagnostic investigation that does not change app behavior can use `CHECKPOINT-APPLY-FIX` before applying the diagnostic fix or recommendation.
 
 ## Prerequisites
 

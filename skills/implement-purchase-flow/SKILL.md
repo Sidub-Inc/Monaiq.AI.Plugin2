@@ -29,6 +29,14 @@ Provides completion context:
 This skill is a leaf node — no downstream skills depend on it.
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+</monaiq-agent-handoff>
+
 <state-detection>
 Before implementing checkout:
 1. Verify SDK is integrated — look for licensing package references
@@ -50,7 +58,9 @@ Guide an agent through adding an embedded purchase flow to a .NET or React appli
 
 ## Journal Hook
 
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-purchase-flow`. Honor `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`, and `CHECKPOINT-SKILL-COMPLETE`; record build/test failures with `record_error` when known and changed paths only with `record_file_changes`. Do not journal ApiKey or EncodedCredential values.
+Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-purchase-flow`. Honor `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`, and `CHECKPOINT-SKILL-COMPLETE`; record build/test failures with `record_error` when known and changed paths only with `record_file_changes`. Do not journal ApiKey or EncodedCredential values.
+
+`CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` is mandatory before checkout route, success-handler, provider behavior, post-purchase refresh, or other application behavior changes. Preserve `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE` and `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`; route any ApiKey/frontend exposure ambiguity through host-native ask and record the checkpoint result before proceeding.
 
 ## Prerequisites
 

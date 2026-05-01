@@ -30,6 +30,14 @@ This is typically the last step in the implementation chain:
 getting-started → manage-catalog → implement-licensing → implement-feature
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+</monaiq-agent-handoff>
+
 <state-detection>
 Before implementing feature checks:
 1. Verify the SDK is integrated — look for the platform's licensing package in project manifests and for licensing DI / provider registration in the composition root.
@@ -52,6 +60,8 @@ Guide an agent through adding license feature checks to a .NET or React applicat
 ## Journal Hook
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-feature`. Honor `CHECKPOINT-FEATURE-SELECTION`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, and `CHECKPOINT-SKILL-COMPLETE`; record build/test failures with `record_error` when known and changed paths only with `record_file_changes`. Do not add a tool-call audit log or separate deferred-ideas event.
+
+`CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` is mandatory before adding or changing feature gates, access checks, rate-limit assertions, consumption recording, or other business logic.
 
 ## Prerequisites
 

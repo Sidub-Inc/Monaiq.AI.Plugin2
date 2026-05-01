@@ -30,6 +30,14 @@ Provides to downstream skills (implement-feature, implement-purchase-flow):
 Chain: manage-catalog [catalogSpec] → implement-licensing [sdkConfig] → implement-feature
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+</monaiq-agent-handoff>
+
 <state-detection>
 Before executing, check what's already set up. For the exact package names, configuration keys, DI extensions, and provider components to grep for, resolve:
 
@@ -58,6 +66,8 @@ Guide an agent through integrating the Monaiq licensing SDK into a .NET or React
 ## Journal Hook
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-licensing`. Honor `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; present each through host-native ask and call `save_checkpoint` again with the result. At completion, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
+
+`CHECKPOINT-PRE-CREDENTIAL-WRITE` is mandatory before writing ApiKeys, IssuerClientId, endpoint URLs, SDK provider configuration, appsettings, user-secrets, `.env`, or persisted Monaiq configuration. Record the user's result before proceeding. Do not store raw ApiKeys, EncodedCredential values, `.env` contents, or user-secrets content in `.monaiq`.
 
 ## Prerequisites
 

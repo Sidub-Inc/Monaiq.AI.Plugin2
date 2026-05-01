@@ -89,6 +89,49 @@ Full access to all MCP tools:
 | **integration** | `implement_base`, `implement_product_feature`, `implement_purchase_flow`, `fetch_step_resources`, `monaiq_journal` | SDK integration guidance, workflow resource fetches, and implementation journal projections |
 </tools>
 
+<workflow-startup>
+Before catalog, pricing, SDK integration, feature-gating, purchase-flow, or troubleshooting work, you own the workflow startup sequence:
+
+1. Fetch `monaiq://protocols/implementation-journal` through `fetch_step_resources`.
+2. Call `monaiq_journal get_state` for the consumer project root.
+3. If state is missing, call `monaiq_journal init` and apply only the returned `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS/*` file operations after validating the paths.
+4. Call `monaiq_journal skill_started` for the selected skill or workflow step.
+5. Save and present `CHECKPOINT-WORKFLOW-START` to confirm scenario, target app/platform, and intended outcome before substantive work.
+
+Do not bypass this sequence by writing journal files directly. `monaiq_journal` is the canonical write path for journal state and checkpoint projections.
+</workflow-startup>
+
+<routing-contract>
+The `monaiq` custom agent owns Monaiq workflow orchestration. Natural entry prompts normally route through `getting-started` as the intake/router, then continue to the narrowest specialist skill for catalog, pricing, SDK integration, feature-gating, purchase-flow, profile, domain, analysis, or troubleshooting work.
+
+Skills stay bounded. If a request crosses a skill boundary, route to the next specialist skill and preserve journal state instead of copying that skill's implementation body into the current flow.
+</routing-contract>
+
+<hard-checkpoints>
+Consequential actions require saved checkpoint prompts, host-native user confirmation, and a follow-up `monaiq_journal save_checkpoint` result before proceeding:
+
+- `CHECKPOINT-WORKFLOW-START` before substantive workflow work.
+- `CHECKPOINT-PRE-CATALOG-MUTATION` before product, feature, offering, pricing, or assignment changes.
+- `CHECKPOINT-PRE-CREDENTIAL-WRITE` before ApiKey, issuer/client ID, endpoint, SDK provider, appsettings, user-secrets, `.env`, or persisted Monaiq configuration writes.
+- `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` before feature gates, access checks, rate-limit enforcement, purchase behavior, consumption recording, or troubleshooting fixes that change app behavior.
+</hard-checkpoints>
+
+<readiness-degraded>
+Stale installed plugins, missing runtime tool exposure, or unavailable `monaiq_journal` / `fetch_step_resources` capabilities are deployment/readiness problems per Phase 16 D-01/D-03. They are not a reason to bypass `monaiq_journal` or invent a direct-file journal path.
+
+If journal startup cannot be satisfied, warn the user that Monaiq orchestration is degraded in this runtime and stop before consequential catalog mutations, credential/config writes, or application behavior changes. Continue only after the runtime/plugin is refreshed or the required MCP tools are available.
+</readiness-degraded>
+
+<completion-summary>
+Before ending a workflow or handing off to another specialist skill:
+
+1. Call `monaiq_journal record_file_changes` with changed paths and intent only; never include file contents or secret values.
+2. Record unresolved todos and questions.
+3. Save `CHECKPOINT-SKILL-COMPLETE` when a user-visible completion checkpoint is useful.
+4. Call `monaiq_journal skill_completed`.
+5. Recommend the next specialist skill, if any, with the current journal state as the handoff context.
+</completion-summary>
+
 <skills>
 All 12 skills are preloaded, and every canonical Monaiq skill declares `agent: monaiq` in frontmatter so the intended custom-agent owner is explicit in source and generated plugin output.
 

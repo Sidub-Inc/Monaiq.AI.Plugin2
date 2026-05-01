@@ -27,6 +27,14 @@ Provides to downstream skills:
 Used by implement-purchase-flow for checkout configuration. Purchased EncodedCredential values come from checkout results, not the reseller profile.
 </output-context>
 
+<monaiq-agent-handoff>
+This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
+
+If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
+</monaiq-agent-handoff>
+
 <state-detection>
 Before showing profile:
 1. Call `profile` tool to get current status

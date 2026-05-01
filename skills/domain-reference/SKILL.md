@@ -8,7 +8,7 @@ auto-invoke:
   - "User asks what a FeatureKey, ProductOffering, or LicenseFeature is"
 tags: [domain, model, knowledge, reference]
 category: domain
-allowed-tools: [Read, fetch_step_resources, mcp__plugin_monaiq_monaiq__fetch_step_resources]
+allowed-tools: [Read, fetch_step_resources, monaiq_journal, mcp__plugin_monaiq_monaiq__fetch_step_resources, mcp__plugin_monaiq_monaiq__monaiq_journal]
 argument-hint: "topic (entities|features|offerings|licenses)"
 tier: 3
 invoked-by: [getting-started, manage-catalog, implement-licensing]
@@ -28,6 +28,10 @@ Provides to requesting skill:
 
 This is a support skill — invoked on-demand by other skills, not part of a linear chain.
 </output-context>
+
+<monaiq-agent-handoff>
+Read-only domain explanation can proceed after resource fetch. If the user asks for follow-up work that changes catalog data, credentials/config, or app behavior, enter the full `monaiq` workflow startup first: fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state` or `monaiq_journal init`, call `skill_started`, and enforce the relevant hard checkpoints before consequential changes.
+</monaiq-agent-handoff>
 
 <state-detection>
 Before answering:
