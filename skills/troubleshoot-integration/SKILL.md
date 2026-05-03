@@ -42,6 +42,14 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 Gate selection: behavior-changing fixes use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`; read-only or diagnostic investigation that does not change app behavior can use `CHECKPOINT-APPLY-FIX` before applying the diagnostic fix or recommendation.
 
+## Evidence-Backed Remediation Pattern
+
+Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+Diagnostic recommendations cite observed error, validation command/result, code/config/catalog/profile/journal evidence, or labeled assumptions. If missing SDK/catalog/offering/profile/code evidence prevents a confident remediation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
+
+After validation failures, call `monaiq_journal record_validation_failure` with the observed error, validation command/result, likely cause, blocked next action, retry choices, and checkpoint requirement. Use a failure-specific checkpoint before further edits, and preserve `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` for behavior-changing remediation.
+
 ## Prerequisites
 
 Fetch the structured diagnostic decision trees for all 4 error categories:

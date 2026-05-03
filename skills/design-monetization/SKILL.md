@@ -62,6 +62,12 @@ Guide an agent through designing a complete pricing tier structure for a user's 
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `design-monetization`. Use `CHECKPOINT-PRICING-APPROVAL` before treating pricing/tier strategy as approved; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
+## Evidence-Backed Recommendation Pattern
+
+Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+Ground pricing, tier, and catalog-ready offering recommendations in selected scenario context, codebase evidence, prior journal decisions, backend/profile/catalog facts, and route-packet evidence where available. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
+
 ## Prerequisites
 
 - Resolve pricing patterns and entity context before proposing tiers:

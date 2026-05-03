@@ -42,12 +42,19 @@ Provides to downstream skills:
 - userScenario: "greenfield" | "brownfield" | "returning" — classified in Step 3
 - detectedState: { hasProducts: boolean, hasOfferings: boolean, profileComplete: boolean, resellerEnabled: boolean }
 - quickStartSpec (optional, greenfield only): { appDescription: string, pricingChoice: string } — from Quick Start Step 4
+- route packet: { scenario, targetApp, platform, profileState, catalogState, codeEvidenceSummary, journalEvidenceSummary, assumptions, recommendedSkill, recommendationRationale, checkpointName, authorizedBy }
 
 Routes to:
 - manage-catalog: receives { userScenario, detectedState, quickStartSpec? }
 - implement-licensing: receives { userScenario, detectedState }
 - analyze-codebase: receives { userScenario, detectedState }
 </output-context>
+
+<shared-contract>
+Use the shared route/checkpoint contract from `ROUTING-MAP.md` and `maintain-implementation-journal.md`. `ROUTING-MAP.md` supplies the route packet vocabulary, phase boundaries, and specialist handoff semantics; `maintain-implementation-journal.md` supplies checkpoint anatomy and approval-result recording.
+
+Present route recommendations in business-readable language first: what the user is trying to accomplish, why the next skill is the right step, and what it changes for their business journey. Then include compact technical backing for agents: route packet fields, evidence summaries, missing assumptions, checkpoint name, and authorizedBy.
+</shared-contract>
 
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
@@ -63,7 +70,17 @@ The compatibility fallback still fetches `monaiq://protocols/implementation-jour
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, call `monaiq_journal init` when state is missing, apply returned `.monaiq/*` file operations after path validation, then call `skill_started` for `getting-started` unless resuming. Save and present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, and intended outcome before Step 2 state detection, Quick Start catalog setup, or routing. Use `CHECKPOINT-RESUME`, `CHECKPOINT-STATE-CONFLICT`, and `CHECKPOINT-WORKFLOW-ROUTE`; call `skill_completed` before handing off to a specialist skill.
 
-`getting-started` is intake/router. It must not perform specialist catalog, SDK integration, feature-gating, purchase-flow, or troubleshooting implementation workflows itself.
+`getting-started` is intake/router. It must not perform substantive catalog, SDK, feature, purchase, or troubleshooting work itself.
+
+## Analyze-First Route Contract
+
+For broad licensing or monetization intent, inspect available `.monaiq` state, app/code evidence, profile state, and catalog state before asking detailed product, feature, offering, SDK, or purchase questions. The first presentation defaults to one recommendation with a short rationale; alternatives are allowed only when they help resolve real ambiguity.
+
+Build and hand off a route packet with these exact fields: `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`. Use summaries only; backend profile, catalog, license, billing, and credential facts win over local journal state.
+
+Route to the narrowest specialist skill that can perform the next substantive work. After a route is selected, choices must not contradict the selected direction; use the route packet as the handoff context instead of reopening a broad workflow menu.
+
+When the user asks for catalog mutation, SDK setup, feature gates, checkout, or troubleshooting but prerequisites are missing, route to the narrowest missing prerequisite instead of a one-off tool call. Check profile/session state, catalog/product/offering state, SDK integration state, codebase evidence state, journal/route packet freshness, and required MCP journal/resource readiness before selecting a specialist route. Explain the blocker in business-readable terms, then include compact technical backing in the route packet.
 
 ## Step 1: Authentication & User Detection
 
@@ -117,7 +134,7 @@ Present two options:
   - Products exist but no offerings → route to `manage-catalog` to create offerings and assign features.
   - Products and offerings exist but SDK not integrated → route to `implement-licensing`.
   - Suggest `analyze-codebase` if the user wants to discover additional licensable capabilities.
-  - For projects that already have a user/customer table, see the **Persist the EncodedCredential (brownfield)** section in the `implement-licensing` skill for credential-persistence guidance.
+  - For projects that already have a user/customer/tenant table, route to the `implement-licensing` Brownfield Credential Contract so ownership scope is decided before credential-persistence guidance.
 
 ### Scenario C — Returning User (catalog exists, previous progress)
 

@@ -69,10 +69,17 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 `CHECKPOINT-PRE-CREDENTIAL-WRITE` is mandatory before writing ApiKeys, IssuerClientId, endpoint URLs, SDK provider configuration, appsettings, user-secrets, `.env`, or persisted Monaiq configuration. Record the user's result before proceeding. Do not store raw ApiKeys, EncodedCredential values, `.env` contents, or user-secrets content in `.monaiq`.
 
+## Evidence-Backed Implementation Pattern
+
+Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+SDK setup recommendations cite detected platform/app structure, profile/session state, catalog or target feature context, journal decisions, and route-packet evidence. If missing SDK/catalog/offering/profile/code evidence prevents a confident implementation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
+
 ## Prerequisites
 
 - Establish a session using the `register_or_login` tool.
 - Determine the credential source. Reseller profile credentials (`ApiKey`, `IssuerClientId`) are used for checkout setup; application runtime `EncodedCredential` values come from completed purchases or an existing application credential store.
+- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not guess endpoint URLs, SDK signatures, setup snippets, pitfalls, or post-purchase behavior.
 - Resolve the platform-specific SDK setup narrative, API surface, and endpoint config:
 
   Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
@@ -85,7 +92,9 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 ## Interactive Step-by-Step Flow
 
-You MUST invoke the `implement_base` tool with `startStep=1` and iterate through each step consecutively — `startStep=2`, `startStep=3`, `startStep=4`, `startStep=5`, `startStep=6`. Each step returns content later steps depend on (credential source → packages → namespaces → service options → DI → runtime); skipping causes wrong namespaces, missing registrations, and broken builds. After each call, apply the step's directives before requesting the next. The Step 1–6 overview below mirrors what `implement_base` returns and serves as a map.
+Use `implement_base` with `startStep=all` when platform, app context, required resources, and credential/config safety posture are already known and no unresolved checkpoint/resource/validation/config blocker exists. Use numeric `startStep` mode (`startStep=1` through `startStep=6`) when step-by-step review improves safety or clarity. Read `journalReadyUpdates` from tool envelopes and apply them by calling `monaiq_journal`; never treat intents as already-applied state.
+
+If validation fails, call `monaiq_journal record_validation_failure` with the failed command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement before continuing. `provision_api_key_config` returns a local plan with non-secret token markers and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; require approval before local writes.
 
 ## Step 1: Determine Credential Source
 
@@ -244,26 +253,17 @@ SDK integration steps are non-destructive — each step modifies source files th
 </error-recovery>
 
 <brownfield>
-## Persist the EncodedCredential (brownfield)
+## Brownfield Credential Contract
 
-On checkout completion the SDK hands your code an `EncodedCredential` string. The SDK does NOT persist
-it for you — you must store it somewhere your next session can read and pass back to
-`LicensingClient` / `ILicenseStateProvider` at startup.
+Persist the EncodedCredential (brownfield) only after an ownership scope decision. Before storage advice or schema changes, stop at `CHECKPOINT-PRE-BROWNFIELD-MIGRATION` and choose one scope: app-wide configuration credential, tenant-level credential, or user-level credential. The selected scope determines where the application reads the credential, who can update it, and which privacy boundary applies.
 
-**Branch 1 — Multi-user app (has a users / customers / identity table):**
-Add a nullable text column (e.g. `encoded_credential`) to that table. Respect the existing schema and
-the project's migration workflow — EF Core, Prisma, Drizzle, raw SQL, whatever the codebase uses. If
-credentials are 1:1 with users, add a scoped unique index. Prefer additive migrations — do not break
-existing functionality. Evaluate column-level encryption per your project's data-classification policy.
+For existing apps, prefer additive nullable changes that preserve current reads and allow a null/unlicensed rollout state. Do not make existing users fail because a credential column, tenant setting, or config value is absent during rollout. Plan a separate backfill for existing customers, define rollback and recovery steps, and keep old code paths readable until the migration is verified.
 
-**Branch 2 — Single-user app (CLI, desktop, developer tool):**
-Three options, in rough order of increasing security:
+Use approved local secret or configuration stores for app-wide credentials, tenant storage for tenant-level credential scope, and user/profile storage for user-level credential scope. Never place raw ApiKey, EncodedCredential, `.env`, user-secrets, or secret-bearing values in prompts, journals, docs, generated plugin output, or client-visible code/config. Use placeholders and resource-backed instructions instead.
 
-| Storage | Pro | Con |
-|---------|-----|-----|
-| Config file | Simple, zero deps | Version-control leakage risk; must be gitignored |
-| Environment variable / `.env.local` | Matches `provision_api_key_config` pattern; gitignored by default | Plain-text on disk |
-| OS keychain (DPAPI, macOS Keychain, libsecret) | Most secure | Platform-specific; adds native dependency |
+For checkout or license delivery, reliable email remains a prerequisite. If the existing user/customer/tenant table lacks a trustworthy email, pause before purchase-flow code and decide how the host app will collect or verify it.
+
+For rate-limit defaults during migration, preserve unlimited and capped semantics. Do not accidentally introduce low capped limits while backfilling or assigning features; make quota, reset cadence, and recovery behavior explicit.
 
 For platform-specific persistence pitfalls (web storage semantics, lifecycle on desktop shells), resolve:
 

@@ -58,6 +58,12 @@ Map a user's application type to recommended licensing models from `monaiq://pat
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `scenario-advisor`. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
+## Evidence-Backed Recommendation Pattern
+
+Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+Consume codebase evidence from `analyze-codebase`, prior journal decisions, and route-packet context when present. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
+
 ## Prerequisites
 
 - Resolve the scenario building blocks and domain model before presenting options:

@@ -60,6 +60,7 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 ## Prerequisites
 
 - Establish a session using the `register_or_login` tool
+- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not infer credential ownership or write secret-bearing values to `.monaiq`.
 
 ## Step 1: View Profile
 
@@ -97,9 +98,10 @@ Call the `profile` tool with `startStep=2` to retrieve reseller credentials used
 | `ApiKey` | Authenticates checkout API calls | `CreateCheckoutSession` and `GetCheckoutResult` API key parameter |
 | `IssuerClientId` | Reseller identity for checkout requests | `CheckoutRequest.IssuerClientId` |
 
-`EncodedCredential` is not a reseller profile credential. It is produced after an offering is purchased and returned by checkout-result retrieval.
+EncodedCredential is not a reseller profile credential. It is produced after an offering is purchased and returned by checkout-result retrieval.
 
 **Security:** Do not persist the `ApiKey` to disk or commit it to source control. Use environment variables or a secrets manager for production deployments.
+Do not write raw `ApiKey`, `IssuerClientId` plus secret context, `EncodedCredential`, `.env`, or user-secret values into prompts, `.monaiq`, summaries, or generated plugin output.
 
 **How credentials connect to checkout setup:**
 

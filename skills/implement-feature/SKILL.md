@@ -63,10 +63,29 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` is mandatory before adding or changing feature gates, access checks, rate-limit assertions, consumption recording, or other business logic.
 
+## Evidence-Backed Implementation Pattern
+
+Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+Feature gate and rate-limit recommendations cite the selected feature, source file or area, SDK state, catalog/offering facts, and journal decisions before business logic edits. If missing SDK/catalog/offering/profile/code evidence prevents a confident implementation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
+
+## Locked Feature Experience Contract
+
+Keep premium capabilities visible, valuable, and safely locked. A denied user should understand what the capability does, why it is unavailable, and which unlock or recovery path fits the current task before protected execution fails. Do not hide premium affordances when showing a visible locked state would improve product understanding.
+
+backend/business-logic enforcement is authoritative. frontend checks are for frontend state communication: loading, available, locked, expired, over-limit, and misconfigured states. Reuse the existing provider, authorization cache, and state snapshot rather than duplicating authorization calls across every component. Backend/business-logic enforcement must still guard the protected action.
+
+locked, expired, over-limit, and misconfigured outcomes need distinct user messages and actions. Locked means upgrade or activate; expired means renew or contact the buyer; over-limit means retry after reset or upgrade; misconfigured means recover setup or contact support. Authorization and rate-limit exceptions are product and diagnostic signals and must not be silently swallowed; preserve them in logs, journals, telemetry, or validation output before translating them to user-facing recovery.
+
+Rate-limit experiences must treat unlimited and capped as explicit states. For capped usage, show current usage, remaining quota, reset cadence, meaningful warning threshold guidance before exhaustion, deterministic denial at the limit, and a recovery path such as wait for reset, retry later, or upgrade. For unlimited usage, say unlimited rather than implying a hidden quota.
+
+Use host-native UI quality: compact, accessible, responsive, aligned with the source app's component system, and persuasive without becoming marketing-heavy. Before changing business logic or UI, use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` and summarize affected pages, components, flows, and user-visible impact.
+
 ## Prerequisites
 
 - Licensing SDK already integrated (complete the `implement-licensing` skill first).
 - Product and features exist in the catalog — use the `product` and `product_feature` tools to verify.
+- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not guess assertion types, feature record fields, namespace imports, pitfalls, or runtime wiring.
 - Resolve the domain model, namespace table, and platform API surface:
 
   Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
@@ -79,7 +98,9 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 ## Interactive Step-by-Step Flow
 
-You MUST invoke the `implement_product_feature` tool with `startStep=1` then `startStep=2` consecutively. Each step returns authoritative type information and code snippets later steps depend on; skipping causes wrong assertion types and broken builds. After each call, apply the step's directives before requesting the next. Build-and-verify guidance is included in step 2's hints. The Step 1–2 overview below mirrors what `implement_product_feature` returns and serves as a map.
+Use `implement_product_feature` with `startStep=all` when SDK state, platform, selected feature, and required resources are known and there is no unresolved checkpoint/resource/validation blocker. Use numeric `startStep` mode (`startStep=1`, then `startStep=2`) when step-by-step review improves safety or clarity. Read `journalReadyUpdates` from tool envelopes and apply them through `monaiq_journal`; never treat intents as already-applied state.
+
+If build or validation fails, call `monaiq_journal record_validation_failure` with command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement before additional edits.
 
 ## Step 1: Discover Feature
 
@@ -143,6 +164,8 @@ Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` o
 For the runtime wiring and error-handling narrative:
 
 Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
+
+Rate-limit and consumption exceptions are product signals and must not be silently swallowed. Surface them in logs/UI/validation paths so the user understands when an entitlement or quota blocked the action.
 
 For known platform-specific pitfalls (e.g., null semantics, provider remount, async hook reuse):
 

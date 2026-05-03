@@ -58,6 +58,12 @@ Analyze a user's project to identify capabilities worth licensing. Read project 
 
 Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `analyze-codebase`. Use `CHECKPOINT-ANALYSIS-SCOPE` before broad scans or scope changes; record paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
 
+## Evidence-Backed Recommendation Pattern
+
+Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence. Code evidence uses file or area pointers and bounded summaries, not full file contents or secrets.
+
+If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations. When this skill produces findings for downstream strategy, include a codebase evidence packet with capability names, source areas, suggested FeatureKey values, confidence, and assumptions.
+
 ## Prerequisites
 
 - Resolve the feature type taxonomy and domain model before classifying capabilities:

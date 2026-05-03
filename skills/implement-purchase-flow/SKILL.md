@@ -62,12 +62,33 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` is mandatory before checkout route, success-handler, provider behavior, post-purchase refresh, or other application behavior changes. Preserve `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE` and `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`; route any ApiKey/frontend exposure ambiguity through host-native ask and record the checkpoint result before proceeding.
 
+## Evidence-Backed Implementation Pattern
+
+Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+Purchase-flow recommendations cite SDK state, offering availability, checkout architecture, credential persistence policy, profile/session state, and journal decisions before checkout behavior changes. If missing SDK/catalog/offering/profile/code evidence prevents a confident implementation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
+
+## Purchase Experience Contract
+
+Design purchase UI around the host app's job, not a universal Monaiq screen. A full license page or purchase page is appropriate when the user is comparing plans, managing billing, or intentionally reviewing account state; a compact feature-level upsell is appropriate beside a locked action when the user already understands the task and needs the shortest trustworthy upgrade route. In both cases, keep the experience host-native, calm, task-focused, and persuasive without turning the application into a marketing page.
+
+Every purchase surface must explain the current license state, the target offering, included features, limits, price, and fit in business-readable language. Offer comparison surfaces should help the user choose confidently by showing plan differences, included features, quota or usage limits, price, and who each plan is for without leading with technical licensing vocabulary. Upgrade copy must explain the current-to-target upgrade path and what value is gained.
+
+Before direct checkout, require reliable email, customer identity, and offering context. Customer email is the purchase identity used for Stripe pre-fill, license delivery, and payment follow-up; if the app cannot provide a reliable email, pause for a host-native question or route to identity/profile work before checkout. Direct checkout from a compact upsell is allowed only when the customer, reliable email, target offering, success path, and recovery path are known.
+
+After checkout completes, refresh license state, read the current entitlement snapshot, show newly unlocked features or the current entitlement state, and provide the next useful action. Cover loading, available, locked, near-limit, over-limit, expired, success, misconfigured, and recovery states so the user never lands in a vague purchased-but-still-blocked experience.
+
+Placement is a product decision. Prefer account/settings/billing pages for broad license management, feature-adjacent surfaces for contextual locked-feature upsells, and admin/tenant surfaces for buyer-managed purchases, but verify against the host app's navigation, component system, accessibility, responsive behavior, and existing visual language. Do not impose a Monaiq visual standard.
+
+Before UI code changes, present `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` with a summary naming affected pages, components, flows, and user-visible impact. Preserve `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE` before writing purchased credentials and record the approval result without ApiKey or EncodedCredential values.
+
 ## Prerequisites
 
 - Licensing SDK already integrated (complete the `implement-licensing` skill first).
 - Establish a session using the `register_or_login` tool.
 - Retrieve credentials via the `profile` tool (step 2) — you need your reseller account identifier (`IssuerClientId`) and `ApiKey`.
 - Published offerings exist — use the `offering` and `feature_offering` tools to browse the catalog.
+- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not guess checkout request fields, endpoint URLs, credential persistence semantics, or post-purchase refresh behavior.
 - Resolve the SDK setup narrative and checkout endpoint configuration:
 
   Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
@@ -78,7 +99,9 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 ## Interactive Step-by-Step Flow
 
-You MUST invoke the `implement_purchase_flow` tool with `startStep=1`, then `startStep=2`, then `startStep=3`, then `startStep=4` consecutively. Each step returns authoritative request/result types, method signatures, and code snippets that later steps depend on; skipping produces misconfigured sessions, missing credentials, or broken provider wiring. After each call, apply the step's directives before requesting the next. The Step 1–4 overview below mirrors what `implement_purchase_flow` returns and serves as a map.
+Use `implement_purchase_flow` with `startStep=all` when platform, offering availability, required resources, credential handling, and checkout architecture are already known and no unresolved checkpoint/resource/validation/config blocker exists. Use numeric `startStep` mode (`startStep=1` through `startStep=4`) when step-by-step review improves safety or clarity. Read `journalReadyUpdates` from tool envelopes and apply them through `monaiq_journal`; never treat intents as already-applied state.
+
+If checkout, build, or validation fails, call `monaiq_journal record_validation_failure` with command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement. For credential setup, `provision_api_key_config` returns a local plan with non-secret token markers and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; require approval before local writes.
 
 ## Step 1: Discovery
 
@@ -134,6 +157,8 @@ Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fet
 After the user completes Stripe Checkout, retrieve the result using the session ID. The result exposes the checkout status, the `CorrelationId` you originally supplied, the license ID, and the encoded credential string.
 
 Persist the credential against the user identified by `CorrelationId` — this credential is what the licensing SDK uses at runtime.
+
+Purchased `EncodedCredential` values come from checkout-result retrieval or application storage, not the reseller profile.
 
 For the platform-specific result type and retrieval call pattern:
 

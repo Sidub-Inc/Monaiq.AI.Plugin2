@@ -65,6 +65,12 @@ Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_stat
 
 `CHECKPOINT-PRE-CATALOG-MUTATION` is mandatory before `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete calls. The checkpoint must summarize intended entities and pricing/assignment impact, and the workflow must record the user's result before tool calls run.
 
+## Evidence-Backed Recommendation Pattern
+
+Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+
+Every product, feature, offering, pricing, or assignment proposal is an evidence-backed catalog recommendation. Present user/business impact before technical product/feature/offering identifiers, then list the exact product, product_feature, offering, or feature_offering operations that would run only after `CHECKPOINT-PRE-CATALOG-MUTATION` approval is recorded. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
+
 ## Prerequisites
 
 - Active session — call `register_or_login` if not already authenticated

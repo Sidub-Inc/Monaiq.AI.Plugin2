@@ -99,10 +99,22 @@ Before catalog, pricing, SDK integration, feature-gating, purchase-flow, or trou
 5. Save and present `CHECKPOINT-WORKFLOW-START` to confirm scenario, target app/platform, and intended outcome before substantive work.
 
 Do not bypass this sequence by writing journal files directly. `monaiq_journal` is the canonical write path for journal state and checkpoint projections.
+
+When a tool response includes `journalReadyUpdates`, treat those entries as proposed journal intents only. Apply them by calling `monaiq_journal` with the corresponding action and safe summary data, then apply the returned local file operations after path validation.
+
+Implementation tools support compact packets with `startStep=all`. Use compact mode when app/platform/context are known and no unresolved checkpoint, resource, validation, or config safety blocker exists; use numeric `startStep` when step-by-step mode is safer. Validation failures are journaled with `record_validation_failure` and should pause remediation until the checkpoint path is resolved.
+
+`provision_api_key_config` returns a local execution plan with non-secret token markers and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; never put raw ApiKeys, EncodedCredential values, JWTs, Stripe keys, or secret-bearing file contents in prompts, journals, checkpoint results, or generated guidance.
 </workflow-startup>
 
 <routing-contract>
 The `monaiq` custom agent owns Monaiq workflow orchestration. Natural entry prompts normally route through `getting-started` as the intake/router, then continue to the narrowest specialist skill for catalog, pricing, SDK integration, feature-gating, purchase-flow, profile, domain, analysis, or troubleshooting work.
+
+Natural licensing or monetization entry prompts route through `getting-started` unless the user is already in a specialist workflow with a fresh .monaiq resume packet. The route packet contract contains `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
+
+Clear specialist intent can bypass broad intake only with satisfied route and journal prerequisites. Treat clear specialist intent as safe for direct routing only after checking prerequisite categories before tool execution: profile/session state, catalog/product/offering state, SDK integration state, codebase evidence state, journal/route packet freshness, and required MCP journal/resource readiness. If any prerequisite is missing, stale, or contradicted, route to the narrowest missing prerequisite instead of a one-off tool call.
+
+Blocked purchase, feature, catalog, SDK, or troubleshooting requests explain the blocker in business-readable terms, name the missing prerequisite, and route to the earlier skill that can satisfy it. Do not call product, product_feature, offering, feature_offering, implement_base, implement_product_feature, or implement_purchase_flow as a shortcut around missing route, journal, catalog, SDK, or evidence state.
 
 Skills stay bounded. If a request crosses a skill boundary, route to the next specialist skill and preserve journal state instead of copying that skill's implementation body into the current flow.
 </routing-contract>
