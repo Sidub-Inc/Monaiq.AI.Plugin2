@@ -14,6 +14,10 @@ tier: 3
 invoked-by: [getting-started, manage-catalog, implement-licensing]
 ---
 
+<objective>
+Answer Monaiq domain questions from authoritative MCP resources, translating user vocabulary into domain concepts without starting a mutation workflow unless the user asks for consequential work.
+</objective>
+
 <input-context>
 Receives from any upstream skill:
 - topic (optional): specific domain concept to explain (entities, features, offerings, licenses)
@@ -33,24 +37,22 @@ This is a support skill — invoked on-demand by other skills, not part of a lin
 Read-only domain explanation can proceed after resource fetch. If the user asks for follow-up work that changes catalog data, credentials/config, or app behavior, enter the full `monaiq` workflow startup first: fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state` or `monaiq_journal init`, call `skill_started`, and enforce the relevant hard checkpoints before consequential changes.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before answering:
-1. Check if the user's question maps to a specific entity or concept
-2. Determine if the question is about entities, relationships, field meanings, or namespace locations
+<workflow>
+1. Classify the user's question as entity, relationship, field meaning, namespace/API surface, checkout/credential terminology, or follow-up implementation work.
+2. Fetch only the resources needed: `monaiq://domain/model` for entities/relationships, `monaiq://domain/namespaces` for type locations, and platform API surface only when the question asks for implementation signatures.
+3. Answer the specific question in business-readable terms first, then include compact technical backing for agents when useful. Do not paste resource content wholesale.
+4. If the user pivots from explanation into catalog mutation, credential/config writes, or app behavior changes, stop and route through the full journal/checkpoint workflow for the relevant specialist skill.
+</workflow>
 
-Based on detected topic:
-- Entity question → resolve `monaiq://domain/model`, focus response on that entity
-- Namespace question → resolve `monaiq://domain/namespaces`
-- Relationship question → resolve both resources, explain the connection
-</state-detection>
+<reference>
+## Topic Routing Reference
 
-<objective>
-Answer questions about Monaiq domain concepts by fetching the domain model and namespace reference MCP resources. The resource content is agent-facing context — use it to inform your response, not to surface directly to the user.
-</objective>
+- Entity question -> resolve `monaiq://domain/model` and focus on that entity.
+- Namespace question -> resolve `monaiq://domain/namespaces`.
+- Relationship question -> resolve both resources and explain the connection.
+- Implementation signature question -> route or fetch platform API surface before answering.
 
-<process>
-
-## Step 1: Fetch Domain Model
+## Fetch Domain Model
 
 Fetch the domain model MCP resource. This contains comprehensive documentation of all entities, their relationships, key fields, polymorphic hierarchies, and invariants.
 
@@ -62,13 +64,13 @@ Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_s
 - License, LicenseFeature, BillingPlan
 - KeyDescriptor, EncodedCredential
 
-## Step 2: Fetch Namespace Reference
+## Fetch Namespace Reference
 
 Fetch the namespace reference MCP resource. This provides authoritative type-to-namespace mappings for .NET and React, ensuring code references use the correct imports.
 
 Fetch `monaiq://domain/namespaces` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
 
-## Step 3: Answer the User's Question
+## Answer the User's Question
 
 Use the fetched resources as internal context to answer the user's specific domain question. Provide a focused answer about the entities, relationships, or concepts they asked about.
 
@@ -82,7 +84,7 @@ Use the fetched resources as internal context to answer the user's specific doma
 | "How does checkout connect to licensing?" | CheckoutRequest, License, EncodedCredential | CorrelationId flow, credential provisioning |
 | "What types are in which namespace?" | All entities | Use `monaiq://domain/namespaces` reference |
 
-</process>
+</reference>
 
 <success_criteria>
 - Domain model resource (`monaiq://domain/model`) was fetched and used as context

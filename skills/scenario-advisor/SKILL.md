@@ -14,6 +14,10 @@ tier: 3
 invoked-by: [analyze-codebase, getting-started]
 ---
 
+<objective>
+Recommend licensing scenarios for the user's app type using capability evidence, route context, and Monaiq scenario patterns. The skill narrows strategic direction before pricing design; it does not design exact tier prices or mutate catalog data.
+</objective>
+
 <input-context>
 Receives from analyze-codebase:
 - capabilities (optional): [{ name, type, suggestedFeatureKey }] — identified licensable features
@@ -38,41 +42,23 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before presenting scenarios:
-1. Check if capabilities were provided from analyze-codebase upstream
-2. If so, infer app type from techStack and skip Step 1
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `scenario-advisor`.
+2. Resolve `monaiq://patterns/scenarios` and `monaiq://domain/model` before presenting options. Stop before recommendation if scenario building blocks or domain context are unavailable.
+3. Infer application type from `analyze-codebase` capabilities, tech stack, route packet, and conversation evidence before asking the user to choose an app type.
+4. Present a business-readable evidence summary first, then compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and app-type inference rationale.
+5. Present 2-3 scenario options with trade-offs. Keep the recommendation narrow: one preferred option plus alternatives only when they resolve real ambiguity.
+6. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario for pricing design.
+7. Output `selectedScenario` and `appType` for `design-monetization`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, then call `skill_completed`.
+</workflow>
 
-Based on state:
-- Capabilities provided → Auto-infer app type, jump to scenario presentation
-- No upstream context → Ask user about their app type (Step 1)
-</state-detection>
+<reference>
+## State Routing Reference
 
-<objective>
-Map a user's application type to recommended licensing models from `monaiq://patterns/scenarios`. Infer the application type from codebase context (if `analyze-codebase` was run) or from conversation context, present 2–3 licensing model options with trade-offs, and route to `design-monetization` after the user selects.
-</objective>
+- Capabilities provided -> infer app type and present scenario options.
+- No upstream context -> ask the narrowest app-type question needed.
 
-<process>
-
-## Journal Hook
-
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `scenario-advisor`. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
-
-## Evidence-Backed Recommendation Pattern
-
-Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
-
-Consume codebase evidence from `analyze-codebase`, prior journal decisions, and route-packet context when present. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
-
-## Prerequisites
-
-- Resolve the scenario building blocks and domain model before presenting options:
-
-  Fetch `monaiq://patterns/scenarios` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-## Step 1: Determine Application Type
+## Determine Application Type
 
 Infer the application type from available context:
 
@@ -85,7 +71,7 @@ Infer the application type from available context:
 
 If `analyze-codebase` was run previously, use its output (tech stack, identified capabilities) to infer the type. If insufficient context to infer, present the application type list and ask the user to select.
 
-## Step 2: Present Licensing Model Options
+## Present Licensing Model Options
 
 Using the composition examples from `monaiq://patterns/scenarios`, present 2–3 licensing model options tailored to the inferred application type:
 
@@ -99,15 +85,15 @@ Using the composition examples from `monaiq://patterns/scenarios`, present 2–3
 
 Reference specific building blocks from `monaiq://patterns/scenarios` by name — do not duplicate resource content.
 
-## Step 3: Capture User Selection
+## Capture User Selection
 
 Let the user review the options, ask questions, and select a licensing model. Record the chosen scenario.
 
-## Step 4: Route to Design
+## Route to Design
 
 After the user selects a licensing model, suggest: "To design your pricing tiers and feature assignments based on this scenario, run the `design-monetization` skill." Include the selected scenario context (application type, chosen model, feature types) for continuity.
 
-</process>
+</reference>
 
 <success_criteria>
 - Application type was inferred from context (not immediately asked)

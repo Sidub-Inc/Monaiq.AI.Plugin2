@@ -13,6 +13,10 @@ tier: 3
 invoked-by: [getting-started]
 ---
 
+<objective>
+Review reseller profile status, retrieve reseller checkout credentials when requested, and present terms/privacy documents without leaking secret-bearing values. Profile acceptance is a checkpointed tool action, not automatic background work.
+</objective>
+
 <input-context>
 Receives from getting-started:
 - detectedState (optional): { profileComplete, resellerEnabled } — skip viewing if state is known
@@ -35,34 +39,24 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before showing profile:
-1. Call `profile` tool to get current status
-2. Check ProfileStatus and ResellerStatus
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `profile-onboarding`.
+2. Establish a session with `register_or_login`, then call `profile` to detect `ProfileStatus`, `ResellerStatus`, and `IssuerClientId`.
+3. Present status in business-readable terms: what the account can do now, what is blocked, and which next action unblocks catalog, checkout, or implementation work.
+4. Retrieve reseller credentials only when needed for catalog/checkout setup or explicitly requested. Never write raw `ApiKey`, `EncodedCredential`, `.env`, user-secrets, or secret-bearing values into prompts, `.monaiq`, summaries, docs, or generated plugin output.
+5. If the user wants to accept terms, stop at `CHECKPOINT-PRE-TERMS-ACCEPTANCE`, present the terms/privacy review state, record the user's approval result, then call `profile` step 4 only after approval.
+6. Record profile status summaries without secret values, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned journal operations, then call `skill_completed`.
+</workflow>
 
-Based on state:
-- ProfileStatus = NotStarted → Guide through full profile setup
-- ProfileStatus = Incomplete → Show what's missing, guide completion
-- ProfileStatus = Completed, ResellerStatus = Pending → Show status, explain approval process
-- Everything complete → Show summary, offer credential retrieval
-</state-detection>
+<reference>
+## State Routing Reference
 
-<objective>
-Guide an agent through reviewing a reseller profile, retrieving reseller checkout credentials, and reading the Terms of Service and Privacy Policy. This covers three read-only steps. Terms acceptance (step 4) is a separate tool action — not part of this skill workflow.
-</objective>
+- ProfileStatus = NotStarted -> guide full profile setup.
+- ProfileStatus = Incomplete -> show missing profile work.
+- ProfileStatus = Completed and ResellerStatus = Pending -> explain approval wait state.
+- ResellerStatus = Enabled -> show summary and offer credential retrieval.
 
-<process>
-
-## Journal Hook
-
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `profile-onboarding`. Use `CHECKPOINT-PRE-TERMS-ACCEPTANCE` before terms/profile acceptance; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
-
-## Prerequisites
-
-- Establish a session using the `register_or_login` tool
-- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not infer credential ownership or write secret-bearing values to `.monaiq`.
-
-## Step 1: View Profile
+## View Profile
 
 Call the `profile` tool with `startStep=1` to view the reseller profile.
 
@@ -87,7 +81,7 @@ Call the `profile` tool with `startStep=1` to view the reseller profile.
 
 The `IssuerClientId` is the primary identifier for the reseller account. It is used as the `IssuerClientId` parameter in checkout requests and appears in license metadata.
 
-## Step 2: Retrieve Credentials
+## Retrieve Credentials
 
 Call the `profile` tool with `startStep=2` to retrieve reseller credentials used for catalog and checkout operations.
 
@@ -108,7 +102,7 @@ Do not write raw `ApiKey`, `IssuerClientId` plus secret context, `EncodedCredent
 - `ApiKey` → Used when calling `ICheckoutService` methods (see the `implement-purchase-flow` skill)
 - `IssuerClientId` → Used in `CheckoutRequest` for embedded purchases
 
-## Step 3: Read Terms
+## Read Terms
 
 Call the `profile` tool with `startStep=3` to read the Terms of Service and Privacy Policy.
 
@@ -138,7 +132,7 @@ To accept terms, call the `profile` tool directly with `startStep=4` and `data={
 - **View terms**: Review Terms of Service and Privacy Policy before accepting.
 - **Check approval status**: See current ResellerStatus and what to expect next.
 
-</process>
+</reference>
 
 <success_criteria>
 - Profile information is visible including `IssuerClientId`, `ProfileStatus`, and `ResellerStatus`

@@ -34,35 +34,20 @@ The compatibility fallback still uses `monaiq_journal` for startup, checkpoints,
 Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from available context (error messages, code, configuration), then fall back to interactive diagnostic questions if the category or resolution can't be determined autonomously. Reference the troubleshooting resource as the diagnostic knowledge source.
 </objective>
 
-<process>
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `troubleshoot-integration`.
+2. Fetch `monaiq://troubleshooting` before diagnosis. When the SDK stack is known, also fetch `monaiq://sdk/{stack}/setup`; supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
+3. Capture the symptom from available evidence first: error text, stack trace, HTTP status, affected operation, relevant code/config area, recent journal decisions, profile/catalog/offering state, and validation command/result when available.
+4. Classify the issue as setup, auth, validation, consumption, or checkout. Ask the user only when evidence cannot identify the category or missing input blocks diagnosis.
+5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+6. Follow the troubleshooting decision tree to form a likely root cause and proposed fix. If missing SDK/catalog/offering/profile/code evidence prevents a confident remediation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
+7. Gate fixes: read-only diagnostic recommendations use `CHECKPOINT-APPLY-FIX`; behavior-changing fixes use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`. Record the user's result before edits.
+8. Apply the smallest targeted fix, then verify with the relevant build, runtime, checkout, credential, or feature-check command. After validation failures, call `monaiq_journal record_validation_failure` with the observed error, validation command/result, likely cause, blocked next action, retry choices, and checkpoint requirement before further edits; use a failure-specific checkpoint before continuing remediation.
+9. Record `record_error` when useful, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, then call `skill_completed`.
+</workflow>
 
-## Journal Hook
-
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `troubleshoot-integration`. Use `CHECKPOINT-APPLY-FIX` before applying diagnostic fixes or recommendations, record `record_error` when useful, record paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
-
-Gate selection: behavior-changing fixes use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`; read-only or diagnostic investigation that does not change app behavior can use `CHECKPOINT-APPLY-FIX` before applying the diagnostic fix or recommendation.
-
-## Evidence-Backed Remediation Pattern
-
-Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
-
-Diagnostic recommendations cite observed error, validation command/result, code/config/catalog/profile/journal evidence, or labeled assumptions. If missing SDK/catalog/offering/profile/code evidence prevents a confident remediation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
-
-After validation failures, call `monaiq_journal record_validation_failure` with the observed error, validation command/result, likely cause, blocked next action, retry choices, and checkpoint requirement. Use a failure-specific checkpoint before further edits, and preserve `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` for behavior-changing remediation.
-
-## Prerequisites
-
-Fetch the structured diagnostic decision trees for all 4 error categories:
-
-Fetch `monaiq://troubleshooting` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-When the user's SDK stack is known, also fetch the matching setup guide for cross-reference:
-
-Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-Supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
-
-## Step 1: Self-Diagnose
+<reference>
+## Self-Diagnose
 
 Attempt to determine the error category and specific symptom automatically from:
 - Error messages in the conversation (stack traces, HTTP status codes, exception types)
@@ -80,14 +65,14 @@ Map to one of the 4 categories:
 
 If a specific symptom is identified, proceed directly to the matching decision tree from the troubleshooting resource and follow its diagnostic steps to resolution.
 
-## Step 2: Interactive Fallback
+## Interactive Fallback
 
 If the category cannot be determined automatically:
 - Ask what the user is trying to do (install SDK, authenticate, validate license, report consumption, complete checkout)
 - Ask for the specific error message or observed behavior
 - Map responses to the appropriate error category and symptom
 
-## Step 3: Apply Decision Tree
+## Apply Decision Tree
 
 Using the matching decision tree from the troubleshooting resource:
 1. Present the diagnostic steps from the resource
@@ -97,13 +82,13 @@ Using the matching decision tree from the troubleshooting resource:
 
 Reference the troubleshooting resource content — do not duplicate it. Use its decision trees directly.
 
-## Step 4: Verify Resolution
+## Verify Resolution
 
 After applying the resolution, confirm the issue is resolved:
 - Ask the user to retry the operation
 - If still failing, re-evaluate: check for a different root cause or escalate to a different error category
 
-</process>
+</reference>
 
 <success_criteria>
 - The troubleshooting resource was fetched and used as the diagnostic knowledge base

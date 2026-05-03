@@ -13,22 +13,9 @@ tier: 2
 invoked-by: [getting-started]
 ---
 
-<input-context>
-Receives from getting-started:
-- userScenario: "greenfield" | "brownfield" | "returning" — determines workflow path
-- detectedState: { hasProducts, hasOfferings, profileComplete, resellerEnabled } — skip completed steps
-- quickStartSpec (optional): { appDescription, pricingChoice } — pre-filled from Quick Start mode
-
-If invoked without upstream context (direct user request), run state detection to build equivalent state.
-</input-context>
-
-<output-context>
-Provides to downstream skills:
-- catalogSpec: { productCode, features: [{ key, type, displayName }], offerings: [{ code, classification, baseRate, currency, interval }], assignments: [{ featureKey, offeringCode, accessLevel | rateLimit }] }
-- catalogComplete: true when product has features, offerings, and assignments verified
-
-Chain: manage-catalog [catalogSpec] → implement-licensing [sdkConfig] → implement-feature
-</output-context>
+<objective>
+Create or update a Monaiq product catalog through evidence-backed recommendation, checkpointed mutation, and read-back verification. The skill owns product, feature, offering, and feature-assignment tool calls; it does not own SDK setup or app code changes.
+</objective>
 
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
@@ -38,48 +25,35 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before executing any workflow, check current catalog state:
-1. Call `product` (list) — check existing products
-2. For each product, call `product_feature` (list) — check feature definitions
-3. Call `offering` (list) — check existing offerings
-4. For offerings with products, call `feature_offering` (list) — check assignments
+<input-output-contract>
+Input from `getting-started`: `userScenario`, `detectedState`, and optional `quickStartSpec`. Direct invocation must rebuild equivalent context through session/profile/catalog state detection.
 
-Based on detected state, route to the appropriate step:
-- No products → Start at Interaction 1 (full creation flow)
-- Products exist, no features → Start at Interaction 1, skip product creation
-- Products + features exist, no offerings → Start at Interaction 2
-- Products + features + offerings exist, no assignments → Auto-create assignments
-- Everything exists → Show catalog summary, offer modification options (utility workflows)
-</state-detection>
+Output: `catalogSpec: { productCode, features: [{ key, type, displayName }], offerings: [{ code, classification, baseRate, currency, interval }], assignments: [{ featureKey, offeringCode, accessLevel | rateLimit }] }` plus `catalogComplete: true` after read-back verification. Downstream chain: `manage-catalog` -> `implement-licensing` -> `implement-feature`.
+</input-output-contract>
 
-<objective>
-Build or modify a product catalog (products, features, pricing tiers, and feature assignments) through a streamlined 2-interaction flow with smart defaults, or manage existing catalog entities through utility workflows.
-</objective>
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize and apply returned `.monaiq/*` operations if needed, then call `skill_started` for `manage-catalog`.
+2. Establish prerequisites: active session, `ResellerStatus = Enabled`, and `monaiq://domain/model` fetched. Stop before catalog mutation when session/profile/domain evidence is missing.
+3. Detect backend catalog state in order: `product` list, `product_feature` list for relevant products, `offering` list, and `feature_offering` list for offerings. Backend catalog state wins; journal records decisions and outcomes only.
+4. Use evidence before asking a new question. Infer catalog recommendation next steps from codebase evidence, route packet context, existing product/offering facts, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-PRE-CATALOG-MUTATION`, with labeled assumptions for product structure, feature path, offering shape, credential handling impact, checkout architecture impact, and next steps. Do not add a new checkpoint name solely for evidence inference.
+5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and the exact `product`, `product_feature`, `offering`, or `feature_offering` operations proposed.
+  Every product, feature, offering, pricing, or assignment proposal is an evidence-backed catalog recommendation.
+6. Stop at `CHECKPOINT-PRE-CATALOG-MUTATION` before any `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete call. Record the user's result before tool calls run.
+7. Execute catalog mutations in dependency order: product, features, offerings, feature assignments. Keep offerings in Draft unless the user explicitly approves publication through `CHECKPOINT-PRE-PUBLISH-OFFERING`.
+8. Perform mandatory read-back verification after create/update of paid-tier assignments: list `feature_offering` rows for each paid offering, verify intended `ServiceAccessLevel` or rate-limit values, and stop on mismatches before claiming catalog completion.
+9. Record changed catalog entities with `monaiq_journal`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, call `skill_completed`, and hand off `catalogSpec` to `implement-licensing`.
+</workflow>
 
-<process>
+<reference>
+## State Routing Reference
 
-## Journal Hook
+- No products -> full creation flow.
+- Products exist, no features -> create features for existing product.
+- Products and features exist, no offerings -> create offerings.
+- Products, features, offerings exist but assignments are missing -> create assignments.
+- Everything exists -> show catalog summary and use utility workflows.
 
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `manage-catalog`. Backend catalog state wins; journal records decisions and outcomes only. Use `CHECKPOINT-CATALOG-STRUCTURE`, `CHECKPOINT-PRE-CATALOG-MUTATION`, and `CHECKPOINT-PRE-PUBLISH-OFFERING`; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
-
-`CHECKPOINT-PRE-CATALOG-MUTATION` is mandatory before `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete calls. The checkpoint must summarize intended entities and pricing/assignment impact, and the workflow must record the user's result before tool calls run.
-
-## Evidence-Backed Recommendation Pattern
-
-Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
-
-Every product, feature, offering, pricing, or assignment proposal is an evidence-backed catalog recommendation. Present user/business impact before technical product/feature/offering identifiers, then list the exact product, product_feature, offering, or feature_offering operations that would run only after `CHECKPOINT-PRE-CATALOG-MUTATION` approval is recorded. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
-
-## Prerequisites
-
-- Active session — call `register_or_login` if not already authenticated
-- Your account needs to be approved for catalog management (Monaiq calls this having `ResellerStatus = Enabled`) — check via the `profile` tool
-- Resolve the domain model for product, feature, offering, and assignment entity context:
-
-  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-## New Catalog Flow (Greenfield/Brownfield)
+## New Catalog Flow
 
 ### Interaction 1: "What features does your product have?"
 
@@ -152,7 +126,7 @@ When state detection shows everything already exists, offer these options:
 - **Add tier**: Create a new pricing tier (Offering) and assign features (common when adding a free or enterprise tier)
 - **View catalog**: Show full product → features → pricing tiers → feature assignments summary
 
-</process>
+</reference>
 
 <error-recovery>
 ## Error Recovery

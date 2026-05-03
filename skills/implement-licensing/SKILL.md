@@ -14,21 +14,9 @@ tier: 2
 invoked-by: [getting-started]
 ---
 
-<input-context>
-Receives from manage-catalog (or direct invocation):
-- catalogSpec (optional): { productCode, features: [{ key, type }], offerings: [{ code, classification }] } — if provided, skip catalog verification
-- platform (optional): "dotnet" | "dotnet/blazor-server" | "react" | "react/vite" | "react/nextjs" — if provided from user intent, skip platform detection
-
-If invoked without upstream context, the skill detects current state and asks the user for missing information.
-</input-context>
-
-<output-context>
-Provides to downstream skills (implement-feature, implement-purchase-flow):
-- sdkConfig: { platform: "dotnet" | "dotnet/blazor-server" | "react" | "react/vite" | "react/nextjs", credentialSource: "configuration" | "user-managed", serviceOptionsConfigured: boolean, diRegistered: boolean }
-- targetFeatures: [{ featureKey, featureType }] — features available for gating (from catalog or user input)
-
-Chain: manage-catalog [catalogSpec] → implement-licensing [sdkConfig] → implement-feature
-</output-context>
+<objective>
+Integrate the Monaiq licensing SDK into a .NET or React app using `implement_base` and canonical resources as the implementation authority. The skill owns platform detection, credential strategy, package/config/DI setup, runtime validation, and downstream handoff to feature gates or purchase flow.
+</objective>
 
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
@@ -38,65 +26,42 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before executing, check what's already set up. For the exact package names, configuration keys, DI extensions, and provider components to grep for, resolve:
+<input-output-contract>
+Input from `manage-catalog` or direct invocation: optional `catalogSpec`, optional platform, and route/journal evidence. Direct invocation must detect equivalent platform, SDK, profile, catalog, and journal state before edits.
 
-Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
+Output: `sdkConfig: { platform, credentialSource, serviceOptionsConfigured, diRegistered }` and `targetFeatures` for `implement-feature` or `implement-purchase-flow`.
+</input-output-contract>
 
-Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
+<tool-first-authority>
+implement_base is authoritative for SDK setup. Use `implement_base` and `fetch_step_resources` as the normal implementation guidance paths before code/config/business-logic changes.
 
-Probe order:
-1. Are SDK packages installed? Look for the platform's SDK package name in the project manifest (`*.csproj` for .NET, `package.json` for React).
-2. Is the licensing configuration present? Look for the platform's licensing configuration section (settings file for .NET, provider component props for React) in source.
-3. Is DI registration wired? Look for the platform's registration extension / provider component in the application composition root.
+SDK reverse-engineering is a plugin guidance defect. Do not inspect DLLs. Do not inspect XML documentation. Do not inspect NuGet package caches. Do not inspect generated binaries to discover SDK signatures, namespaces, setup snippets, endpoint values, or runtime behavior.
 
-Based on detected state:
-- Nothing found → Full flow from Step 1
-- Packages installed → Skip Step 2, start at credential configuration
-- Packages + config found → Skip to DI registration
-- Everything configured → Show summary, offer credential recovery utility
-</state-detection>
+If Monaiq tool or resource guidance is missing, contradictory, or insufficient, stop before code/config/business-logic changes and record a plugin guidance defect with monaiq_journal record_error.
+</tool-first-authority>
 
-<objective>
-Guide an agent through integrating the Monaiq licensing SDK into a .NET or React application — from credential discovery through runtime license validation. Covers six areas: credential source determination, package installation, namespace reference, service options configuration, dependency injection registration, and runtime usage.
-</objective>
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `implement-licensing` or resume through `CHECKPOINT-RESUME`.
+2. Establish prerequisites: active session, platform/app context, catalog or target feature context when needed, and canonical resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://platforms/api-surface/{platform}`, `monaiq://config/endpoints`, and `monaiq://docs/anti-patterns/{platform}`. Stop before edits when resource guidance is missing.
+3. Detect current SDK state with resource-backed facts: package manifest, licensing configuration, DI/provider registration, runtime usage, and existing credential storage.
+4. Use evidence before asking a new question. Infer credential handling, checkout architecture impact, feature path dependencies, and next steps from codebase evidence, route packet context, profile/session state, catalog facts, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, or `CHECKPOINT-PRE-CREDENTIAL-WRITE`, with labeled assumptions. If the app has user-login evidence, infer user-managed credential persistence from user-login evidence and confirm that decision in CHECKPOINT-CREDENTIAL-SOURCE or CHECKPOINT-PRE-BROWNFIELD-MIGRATION instead of asking a separate credential-scope question.
+5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and validation plan.
+6. Call `implement_base` with `startStep=all` when platform, app context, required resources, and credential/config safety posture are known; use numbered steps only when step-by-step review improves safety. Treat `journalReadyUpdates` as intents that must be applied through `monaiq_journal`.
+7. Stop at the relevant checkpoint before consequential changes: `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, or `CHECKPOINT-PRE-CREDENTIAL-WRITE`. `CHECKPOINT-PRE-CREDENTIAL-WRITE` is mandatory before ApiKeys, IssuerClientId, endpoint URLs, SDK provider configuration, appsettings, user-secrets, `.env`, or persisted Monaiq configuration; record the user's result before proceeding.
+8. Apply package/config/DI/runtime edits using only `implement_base` and fetched resource guidance. Do not store raw ApiKeys, EncodedCredential values, `.env` contents, or user-secrets content in `.monaiq`.
+9. Build and validate. On failure, call `monaiq_journal record_validation_failure` with command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement before remediation.
+10. Record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned file operations, call `skill_completed`, and hand off `sdkConfig`.
+</workflow>
 
-<process>
+<reference>
+## State Detection Reference
 
-## Journal Hook
+- Nothing found -> full SDK setup flow.
+- Packages installed -> start at credential/configuration.
+- Packages and config found -> skip to DI/provider registration.
+- Everything configured -> summarize and offer credential recovery or verification workflows.
 
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-licensing`. Honor `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; present each through host-native ask and call `save_checkpoint` again with the result. At completion, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
-
-`CHECKPOINT-PRE-CREDENTIAL-WRITE` is mandatory before writing ApiKeys, IssuerClientId, endpoint URLs, SDK provider configuration, appsettings, user-secrets, `.env`, or persisted Monaiq configuration. Record the user's result before proceeding. Do not store raw ApiKeys, EncodedCredential values, `.env` contents, or user-secrets content in `.monaiq`.
-
-## Evidence-Backed Implementation Pattern
-
-Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
-
-SDK setup recommendations cite detected platform/app structure, profile/session state, catalog or target feature context, journal decisions, and route-packet evidence. If missing SDK/catalog/offering/profile/code evidence prevents a confident implementation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
-
-## Prerequisites
-
-- Establish a session using the `register_or_login` tool.
-- Determine the credential source. Reseller profile credentials (`ApiKey`, `IssuerClientId`) are used for checkout setup; application runtime `EncodedCredential` values come from completed purchases or an existing application credential store.
-- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not guess endpoint URLs, SDK signatures, setup snippets, pitfalls, or post-purchase behavior.
-- Resolve the platform-specific SDK setup narrative, API surface, and endpoint config:
-
-  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-  Fetch `monaiq://platforms/api-surface/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-  Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-  Fetch `monaiq://docs/anti-patterns/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-## Interactive Step-by-Step Flow
-
-Use `implement_base` with `startStep=all` when platform, app context, required resources, and credential/config safety posture are already known and no unresolved checkpoint/resource/validation/config blocker exists. Use numeric `startStep` mode (`startStep=1` through `startStep=6`) when step-by-step review improves safety or clarity. Read `journalReadyUpdates` from tool envelopes and apply them by calling `monaiq_journal`; never treat intents as already-applied state.
-
-If validation fails, call `monaiq_journal record_validation_failure` with the failed command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement before continuing. `provision_api_key_config` returns a local plan with non-secret token markers and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; require approval before local writes.
-
-## Step 1: Determine Credential Source
+## Credential Source Reference
 
 Before writing any code, determine how end-users will provide their license credentials.
 
@@ -236,7 +201,7 @@ When state detection shows SDK is already integrated, offer these options:
 - **Switch credential source** — Migrate from configuration-based to user-managed credentials (or vice versa). Involves implementing or removing a custom credential resolver; resolve `monaiq://sdk/{stack}/setup` for the migration narrative.
 - **Verify integration** — Run a quick health check: confirm packages are installed, configuration is present, DI is registered, and a test authorization call succeeds.
 
-</process>
+</reference>
 
 <error-recovery>
 ## Error Recovery

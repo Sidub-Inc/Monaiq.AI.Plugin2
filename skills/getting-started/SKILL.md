@@ -18,6 +18,52 @@ invoked-by: [user]
 State-aware onboarding that detects user progress, classifies their scenario (greenfield, brownfield, or returning), and routes intelligently to the next action. Supports Quick Start mode for greenfield users to collapse the full journey into 2 interactions.
 </objective>
 
+<execution_context>
+Executable Monaiq workflow protocol. Direct skill invocation is first-class; the custom monaiq agent is optional convenience only. This skill is authoritative when invoked directly, provided it follows the required reading, journal startup, returned file-operation application, checkpoint, prerequisite-stop, and success criteria below before any consequential work.
+</execution_context>
+
+<required_reading>
+- `ROUTING-MAP.md` for the shared route/checkpoint contract, route packet vocabulary, specialist phase boundaries, and direct invocation fallback.
+- `maintain-implementation-journal.md` for journal file operation application, checkpoint anatomy, and approval-result recording.
+- `monaiq://protocols/implementation-journal` through `fetch_step_resources` before journal startup or resume decisions.
+</required_reading>
+
+<direct-invocation-contract>
+Direct skill invocation is first-class. If the host can activate `monaiq`, hand off loaded request and journal context; if it cannot, warn once and continue with this skill's executable protocol. The custom monaiq agent is optional convenience only, not a correctness dependency.
+
+The fallback is not degraded: call `monaiq_journal get_state`, call `monaiq_journal init` when state is absent, apply returned .monaiq/* file operations after path validation, call `skill_started`, present and save `CHECKPOINT-WORKFLOW-START`, then route to the narrowest specialist. Stop before consequential work when journal, route, catalog, SDK, code evidence, or MCP readiness prerequisites are missing.
+</direct-invocation-contract>
+
+<monaiq-agent-handoff>
+This skill runs correctly when invoked directly or through the optional `monaiq` custom agent. If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
+
+The compatibility fallback still uses the same direct-invocation contract above: fetch journal protocol, initialize and apply `.monaiq/*` operations when needed, call `skill_started`, enforce `CHECKPOINT-WORKFLOW-START`, and route to the narrowest specialist skill.
+</monaiq-agent-handoff>
+
+<process_steps>
+1. Fetch `monaiq://protocols/implementation-journal` and read the shared route/checkpoint contract.
+2. Call `monaiq_journal get_state`; when no state exists, call `monaiq_journal init` and apply returned `.monaiq/*` file operations under the consumer project root.
+3. Verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist when the returned operations indicate they should.
+4. Call `monaiq_journal skill_started` for `getting-started` unless resuming from a fresh state packet.
+5. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, intended outcome, and any inferred assumptions; continue only after recording the approval result.
+6. Inspect profile, catalog, code, and journal evidence before asking detailed questions.
+7. Emit one route packet with the exact shared fields and hand off to the narrowest specialist skill.
+</process_steps>
+
+<anti_patterns>
+- Do not treat direct skill invocation as a lower-quality path.
+- Do not skip `monaiq_journal get_state`, `monaiq_journal init`, returned operation application, `skill_started`, or hard checkpoints because the custom agent is unavailable.
+- Do not perform substantive catalog, SDK, feature, purchase, or troubleshooting work inside this intake/router skill.
+- Do not ask low-value questions when existing code, journal, profile, or catalog evidence supports an inference that can be confirmed in the next checkpoint.
+</anti_patterns>
+
+<success_criteria>
+- Direct invocation initializes or resumes `.monaiq` state, applies returned `.monaiq/*` file operations, records `skill_started`, and enforces `CHECKPOINT-WORKFLOW-START`.
+- The route packet preserves `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
+- The user sees one business-readable recommendation with compact technical backing and a specialist handoff.
+- Missing prerequisites route to the narrowest missing prerequisite and stop before consequential work.
+</success_criteria>
+
 <glossary-for-humans>
 
 When users describe what they want using everyday language, map their terms to Monaiq domain concepts:
@@ -56,33 +102,8 @@ Use the shared route/checkpoint contract from `ROUTING-MAP.md` and `maintain-imp
 Present route recommendations in business-readable language first: what the user is trying to accomplish, why the next skill is the right step, and what it changes for their business journey. Then include compact technical backing for agents: route packet fields, evidence summaries, missing assumptions, checkpoint name, and authorizedBy.
 </shared-contract>
 
-<monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, applies returned `.monaiq/*` file operations, calls `skill_started`, and enforces `CHECKPOINT-WORKFLOW-START` before consequential follow-up actions.
-</monaiq-agent-handoff>
-
-<process>
-
-## Journal Hook
-
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, call `monaiq_journal init` when state is missing, apply returned `.monaiq/*` file operations after path validation, then call `skill_started` for `getting-started` unless resuming. Save and present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, and intended outcome before Step 2 state detection, Quick Start catalog setup, or routing. Use `CHECKPOINT-RESUME`, `CHECKPOINT-STATE-CONFLICT`, and `CHECKPOINT-WORKFLOW-ROUTE`; call `skill_completed` before handing off to a specialist skill.
-
-`getting-started` is intake/router. It must not perform substantive catalog, SDK, feature, purchase, or troubleshooting work itself.
-
-## Analyze-First Route Contract
-
-For broad licensing or monetization intent, inspect available `.monaiq` state, app/code evidence, profile state, and catalog state before asking detailed product, feature, offering, SDK, or purchase questions. The first presentation defaults to one recommendation with a short rationale; alternatives are allowed only when they help resolve real ambiguity.
-
-Build and hand off a route packet with these exact fields: `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`. Use summaries only; backend profile, catalog, license, billing, and credential facts win over local journal state.
-
-Route to the narrowest specialist skill that can perform the next substantive work. After a route is selected, choices must not contradict the selected direction; use the route packet as the handoff context instead of reopening a broad workflow menu.
-
-When the user asks for catalog mutation, SDK setup, feature gates, checkout, or troubleshooting but prerequisites are missing, route to the narrowest missing prerequisite instead of a one-off tool call. Check profile/session state, catalog/product/offering state, SDK integration state, codebase evidence state, journal/route packet freshness, and required MCP journal/resource readiness before selecting a specialist route. Explain the blocker in business-readable terms, then include compact technical backing in the route packet.
-
-## Step 1: Authentication & User Detection
+<reference>
+## Authentication & User Detection
 
 Call the `register_or_login` tool to authenticate and establish a session.
 
@@ -93,7 +114,7 @@ Call the `register_or_login` tool to authenticate and establish a session.
 **If login succeeds — this is a RETURNING user:**
 - Proceed to Step 2 with returning-user context.
 
-## Step 2: State Detection
+## State Detection
 
 Gather the user's current state by calling these tools in sequence:
 
@@ -111,7 +132,7 @@ Build a state picture from the results:
 | `profileComplete` | ProfileStatus is "Completed" |
 | `resellerEnabled` | ResellerStatus is "Enabled" |
 
-## Step 3: Scenario Classification
+## Scenario Classification
 
 Based on the detected state, classify the user into one of three scenarios:
 
@@ -146,7 +167,7 @@ Present two options:
   - If SDK integrated but no feature gating → route to `implement-licensing` (which routes to `implement-feature`)
   - If everything is set up → route to `analyze-codebase` for optimization, `design-monetization` for strategy refinement, or `scenario-advisor` for licensing model evaluation
 
-## Step 4: Quick Start Mode
+## Quick Start Mode
 
 **Available only for Greenfield scenario (Scenario A).**
 
@@ -169,7 +190,7 @@ After both interactions, route to `manage-catalog` with the pre-filled context (
 
 Quick Start must not create or update catalog entities directly. Route to `manage-catalog` before the first `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete call; if a host forces inline continuation, enforce `CHECKPOINT-PRE-CATALOG-MUTATION` and record the user's result before any catalog mutation tool call.
 
-## Step 5: Intent Routing (Fallback)
+## Intent Routing Fallback
 
 If none of the above scenarios apply cleanly, or if the user expresses a specific intent that doesn't match the detected scenario, present the full routing table with state-aware annotations:
 
@@ -185,7 +206,7 @@ If none of the above scenarios apply cleanly, or if the user expresses a specifi
 
 Annotate each row with the user's current progress where applicable (e.g., "✓ 2 products created" or "— not started"). If the user's intent is unclear, summarize the available paths and ask which direction they'd like to go.
 
-</process>
+</reference>
 
 <success_criteria>
 - Session is established via `register_or_login` with new/returning user detection

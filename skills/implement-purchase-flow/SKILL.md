@@ -14,20 +14,9 @@ tier: 3
 invoked-by: [implement-licensing, manage-catalog]
 ---
 
-<input-context>
-Receives from implement-licensing or manage-catalog:
-- sdkConfig (optional): { platform, credentialSource } — confirms SDK is ready
-- catalogSpec (optional): { offerings: [{ code, classification, baseRate }] } — available offerings to sell
-
-If invoked without upstream context, verifies SDK integration and discovers offerings from catalog.
-</input-context>
-
-<output-context>
-Provides completion context:
-- checkoutImpl: { architecture: "server-initiated" | "client-only", offeringCodes: [], checkoutRoute: string, successHandler: string }
-
-This skill is a leaf node — no downstream skills depend on it.
-</output-context>
+<objective>
+Add an in-app license purchase flow tied to published offerings, reliable customer identity, credential persistence, post-purchase state refresh, and host-native recovery states. This is a leaf skill; it completes checkout integration rather than handing off to another implementation skill.
+</objective>
 
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
@@ -37,37 +26,34 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before implementing checkout:
-1. Verify SDK is integrated — look for licensing package references
-2. Call `offering` (list) — check for published offerings to sell
-3. Check for existing checkout implementation — look for checkout session creation code
+<input-output-contract>
+Input from `implement-licensing` or `manage-catalog`: optional `sdkConfig`, optional `catalogSpec`, route/journal context, and target offering evidence. Direct invocation must verify SDK integration and discover sellable offerings before checkout work.
 
-Based on detected state:
-- SDK not integrated → Route to implement-licensing first
-- No offerings exist → Route to manage-catalog to create offerings
-- Offerings exist but all Draft → Warn that offerings need to be published (Status = Public) for checkout
-- Existing checkout code found → Show current implementation, offer modifications
-</state-detection>
+Output: `checkoutImpl: { architecture: "server-initiated" | "client-only", offeringCodes: [], checkoutRoute: string, successHandler: string }` plus validation status.
+</input-output-contract>
 
-<objective>
-Guide an agent through adding an embedded purchase flow to a .NET or React application so users can buy licenses without leaving the app. Covers four areas: offering discovery and architecture decisions, backend checkout session creation, success handling with credential provisioning, and context provider wiring.
-</objective>
+<tool-first-authority>
+implement_purchase_flow is authoritative for checkout, credential persistence, post-purchase refresh, and purchase-result handling. Use `implement_purchase_flow` and `fetch_step_resources` as the normal implementation guidance paths before code/config/business-logic changes.
 
-<process>
+SDK reverse-engineering is a plugin guidance defect. Do not inspect DLLs. Do not inspect XML documentation. Do not inspect NuGet package caches. Do not inspect generated binaries to discover SDK signatures, checkout request fields, credential persistence semantics, endpoint values, or post-purchase behavior.
 
-## Journal Hook
+If Monaiq tool or resource guidance is missing, contradictory, or insufficient, stop before code/config/business-logic changes and record a plugin guidance defect with monaiq_journal record_error.
+</tool-first-authority>
 
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, handle resume through `CHECKPOINT-RESUME`, then call `skill_started` for `implement-purchase-flow`. Honor `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`, and `CHECKPOINT-SKILL-COMPLETE`; record build/test failures with `record_error` when known and changed paths only with `record_file_changes`. Do not journal ApiKey or EncodedCredential values.
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `implement-purchase-flow` or resume through `CHECKPOINT-RESUME`.
+2. Establish prerequisites: SDK integrated, active session, profile credentials available server-side, published offerings available, and resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://config/endpoints`, `monaiq://docs/anti-patterns/{platform}`, `monaiq://domain/model`, and `monaiq://platforms/api-surface/{platform}`. Missing SDK routes to `implement-licensing`; missing offerings route to `manage-catalog`.
+3. Detect existing checkout implementation and purchase UI entry points before proposing new routes/components.
+4. Use evidence before asking a new question. Infer checkout architecture from existing routes, server/API boundaries, auth/session shape, purchase UI entry points, SDK state, offering facts, credential handling policy, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-CHECKOUT-ARCHITECTURE`, with labeled assumptions for checkout architecture, feature path, credential handling, and next steps. Do not add a new checkpoint name solely for evidence inference.
+5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, selected offerings, architecture, credential persistence policy, and validation plan.
+6. Call `implement_purchase_flow` with `startStep=all` when platform, offering availability, required resources, credential handling, and checkout architecture are known; use numbered steps only when step-by-step review improves safety. Apply `journalReadyUpdates` through `monaiq_journal`.
+7. Stop at `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, or `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK` before checkout routes, success handlers, provider behavior, post-purchase refresh, credential persistence, or frontend/API-key exposure decisions. Do not journal ApiKey or EncodedCredential values.
+8. Apply checkout, success, persistence, and UI changes using the authoritative tool/resource guidance only. If guidance is missing, contradictory, or insufficient, stop and record a plugin guidance defect.
+9. Validate checkout session creation, result retrieval, credential storage, state refresh, and feature checks. On checkout/build/validation failure, call `monaiq_journal record_validation_failure` before remediation.
+10. Record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, and call `skill_completed`.
+</workflow>
 
-`CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` is mandatory before checkout route, success-handler, provider behavior, post-purchase refresh, or other application behavior changes. Preserve `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE` and `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK`; route any ApiKey/frontend exposure ambiguity through host-native ask and record the checkpoint result before proceeding.
-
-## Evidence-Backed Implementation Pattern
-
-Before code/config/business-logic changes, present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
-
-Purchase-flow recommendations cite SDK state, offering availability, checkout architecture, credential persistence policy, profile/session state, and journal decisions before checkout behavior changes. If missing SDK/catalog/offering/profile/code evidence prevents a confident implementation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
-
+<experience-contract>
 ## Purchase Experience Contract
 
 Design purchase UI around the host app's job, not a universal Monaiq screen. A full license page or purchase page is appropriate when the user is comparing plans, managing billing, or intentionally reviewing account state; a compact feature-level upsell is appropriate beside a locked action when the user already understands the task and needs the shortest trustworthy upgrade route. In both cases, keep the experience host-native, calm, task-focused, and persuasive without turning the application into a marketing page.
@@ -82,28 +68,17 @@ Placement is a product decision. Prefer account/settings/billing pages for broad
 
 Before UI code changes, present `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` with a summary naming affected pages, components, flows, and user-visible impact. Preserve `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE` before writing purchased credentials and record the approval result without ApiKey or EncodedCredential values.
 
-## Prerequisites
+</experience-contract>
 
-- Licensing SDK already integrated (complete the `implement-licensing` skill first).
-- Establish a session using the `register_or_login` tool.
-- Retrieve credentials via the `profile` tool (step 2) — you need your reseller account identifier (`IssuerClientId`) and `ApiKey`.
-- Published offerings exist — use the `offering` and `feature_offering` tools to browse the catalog.
-- If any required canonical resource is unavailable, stop before catalog mutations, code edits, credential/config writes, or validation remediation. Do not guess checkout request fields, endpoint URLs, credential persistence semantics, or post-purchase refresh behavior.
-- Resolve the SDK setup narrative and checkout endpoint configuration:
+<reference>
+## State Routing Reference
 
-  Fetch `monaiq://sdk/{stack}/setup` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
+- SDK not integrated -> route to `implement-licensing` first.
+- No offerings exist -> route to `manage-catalog` to create offerings.
+- Offerings exist but all are Draft -> warn that offerings need to be Public for checkout.
+- Existing checkout code found -> show current implementation and offer modifications.
 
-  Fetch `monaiq://config/endpoints` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-  Fetch `monaiq://docs/anti-patterns/{platform}` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-## Interactive Step-by-Step Flow
-
-Use `implement_purchase_flow` with `startStep=all` when platform, offering availability, required resources, credential handling, and checkout architecture are already known and no unresolved checkpoint/resource/validation/config blocker exists. Use numeric `startStep` mode (`startStep=1` through `startStep=4`) when step-by-step review improves safety or clarity. Read `journalReadyUpdates` from tool envelopes and apply them through `monaiq_journal`; never treat intents as already-applied state.
-
-If checkout, build, or validation fails, call `monaiq_journal record_validation_failure` with command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement. For credential setup, `provision_api_key_config` returns a local plan with non-secret token markers and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; require approval before local writes.
-
-## Step 1: Discovery
+## Discovery Reference
 
 Determine your application's checkout architecture and identify the offerings to sell.
 
@@ -237,7 +212,7 @@ Fetch `monaiq://platforms/pitfalls/{platform}` via the MCP `resources/read` oper
 - `monaiq://config/endpoints` — Checkout/licensing endpoint base URLs.
 - `monaiq://domain/model` — Offering, license, and checkout-session entity shapes.
 
-</process>
+</reference>
 
 <error-recovery>
 ## Error Recovery

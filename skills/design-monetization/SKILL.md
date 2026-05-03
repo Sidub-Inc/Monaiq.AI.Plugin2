@@ -14,6 +14,10 @@ tier: 1
 invoked-by: [user, analyze-codebase, getting-started]
 ---
 
+<objective>
+Design catalog-ready pricing tiers from scenario, capability, codebase, catalog, and journal evidence. This skill recommends and refines monetization strategy; it does not create or mutate catalog entities.
+</objective>
+
 <input-context>
 Receives from scenario-advisor:
 - selectedScenario (optional): { name, model, featureTypes, offeringModel } — chosen licensing model
@@ -41,42 +45,25 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
 </monaiq-agent-handoff>
 
-<state-detection>
-Before designing tiers:
-1. Check if a selectedScenario was provided from scenario-advisor
-2. Call `offering` (list) — check if pricing tiers (Offerings) already exist
+<workflow>
+1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `design-monetization`.
+2. Resolve `monaiq://patterns/pricing` and `monaiq://domain/model` before proposing tiers. Stop before pricing recommendations if pricing or entity context is unavailable.
+3. Gather inputs from `selectedScenario`, capability evidence, route packet, journal decisions, and existing offerings. If upstream context is missing, ask only the narrowest strategic question needed to choose a pricing direction.
+4. Call `offering` list when catalog context is available, then treat existing offerings as evidence for refinement rather than overwriting them.
+5. Present a business-readable evidence summary first, then compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and pricing-pattern rationale.
+6. Propose a complete tier structure up front using fetched pricing patterns, then refine through user feedback.
+7. Use `CHECKPOINT-PRICING-APPROVAL` before treating pricing, tier, or feature-assignment strategy as approved for catalog creation.
+8. Output a catalog-ready `pricingPlan` for `manage-catalog`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned journal operations, then call `skill_completed`.
+</workflow>
 
-Based on state:
-- Scenario provided, no existing offerings → Use scenario to inform tier design (Step 2)
-- No upstream context → Gather from conversation (Step 1)
-- Existing offerings → Show current pricing, offer refinement (adjust tiers, add/remove features)
-</state-detection>
+<reference>
+## State Routing Reference
 
-<objective>
-Guide an agent through designing a complete pricing tier structure for a user's product. Propose a tier structure up front based on context from `scenario-advisor` (or conversation), then refine through user feedback. Output a catalog-ready summary table that feeds directly into the `manage-catalog` skill.
-</objective>
+- Scenario provided, no existing offerings -> use scenario to inform tier design.
+- No upstream context -> gather product, customer, and pricing-model constraints through conversation.
+- Existing offerings -> show current pricing and offer refinement.
 
-<process>
-
-## Journal Hook
-
-Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, then call `skill_started` for `design-monetization`. Use `CHECKPOINT-PRICING-APPROVAL` before treating pricing/tier strategy as approved; save `CHECKPOINT-SKILL-COMPLETE` when useful, then call `skill_completed`.
-
-## Evidence-Backed Recommendation Pattern
-
-Before consequential recommendations, present a business-readable evidence summary first, then compact technical backing for agents. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
-
-Ground pricing, tier, and catalog-ready offering recommendations in selected scenario context, codebase evidence, prior journal decisions, backend/profile/catalog facts, and route-packet evidence where available. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
-
-## Prerequisites
-
-- Resolve pricing patterns and entity context before proposing tiers:
-
-  Fetch `monaiq://patterns/pricing` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-  Fetch `monaiq://domain/model` via the MCP `resources/read` operation or `fetch_step_resources` tool before proceeding.
-
-## Step 1: Gather Context
+## Gather Context
 
 Determine design inputs from available context:
 
@@ -86,7 +73,7 @@ Determine design inputs from available context:
 
 Infer the appropriate number of tiers from: scenario-advisor output (if available), application complexity, identified feature count, and market norms for the application type.
 
-## Step 2: Propose Tier Structure
+## Propose Tier Structure
 
 Using pricing patterns from `monaiq://patterns/pricing`, propose a complete tier structure:
 
@@ -106,7 +93,7 @@ For each feature in each tier, specify:
 
 Explain the rationale: why this many tiers, why these price points relative to each other, and which pricing pattern from `monaiq://patterns/pricing` this follows.
 
-## Step 3: Refine with User
+## Refine with User
 
 Present the proposal and invite feedback. Common refinements:
 - Adjust tier count (add/remove tiers)
@@ -117,7 +104,7 @@ Present the proposal and invite feedback. Common refinements:
 
 Iterate until the user approves the tier structure.
 
-## Step 4: Output Catalog-Ready Summary
+## Output Catalog-Ready Summary
 
 Produce a final structured summary table ready for `manage-catalog` input:
 
@@ -127,11 +114,11 @@ Produce a final structured summary table ready for `manage-catalog` input:
 
 This table contains all fields needed by the `manage-catalog` skill to create the catalog: product code, offering codes, feature keys with assignment values.
 
-## Step 5: Route to Catalog
+## Route to Catalog
 
 Suggest: "To create this catalog in Monaiq, run the `manage-catalog` skill with the specification above."
 
-</process>
+</reference>
 
 <success_criteria>
 - `monaiq://patterns/pricing` was fetched and used for pattern knowledge

@@ -34,6 +34,34 @@ Record skill lifecycle, consequential decisions, todos, blockers, questions, val
 Tool envelopes may include `journalReadyUpdates`. Treat them as proposed journal intents, not applied state. Apply supported intents by calling `monaiq_journal` with the specified action and safe summary data, then apply the returned file operations locally after path validation.
 </journal-contract>
 
+<operation-application-protocol>
+Calling `monaiq_journal` is incomplete until the caller applies and verifies the returned operations. You must apply returned file operations locally under the consumer project root before claiming journal progress.
+
+For every `monaiq_journal` response:
+1. Inspect `fileOperations` before continuing.
+2. You must validate each fileOperations path against the `.monaiq` allowlist: `.monaiq/`, `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, `.monaiq/config.json`, `.monaiq/CHECKPOINTS`, and `.monaiq/CHECKPOINTS/*.md`.
+3. Apply only supported operation kinds: `ensureDirectory`, `writeFile`, and `appendFile`.
+4. Resolve paths under the consumer project root and never outside it.
+5. You must verify .monaiq/STATE.md exists when state is initialized or updated.
+6. You must verify .monaiq/JOURNAL.md exists when journal entries are initialized or appended.
+7. You must verify .monaiq/CHECKPOINTS exists when init or checkpoint operations are returned.
+8. You must verify .monaiq/CHECKPOINTS/*.md exists after a `save_checkpoint` call with a `result` payload.
+
+Canonical checkpoint prompt call:
+
+```json
+{"checkpoint":"CHECKPOINT-PRE-CREDENTIAL-WRITE","summary":"Credential target selected.","question":"Approve the credential write plan?"}
+```
+
+Canonical approval recording call:
+
+```json
+{"checkpoint":"CHECKPOINT-PRE-CREDENTIAL-WRITE","summary":"Credential target selected.","question":"Approve the credential write plan?","result":{"answer":"approved"}}
+```
+
+Do not use checkpointName; the hosted parser reads checkpoint.
+</operation-application-protocol>
+
 <state-detection>
 At Step 1 of every invoking skill, call `monaiq_journal get_state`. If no journal exists, call `monaiq_journal init`, apply the returned file operations, then call `skill_started`.
 
