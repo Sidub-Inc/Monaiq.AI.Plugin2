@@ -30,3 +30,18 @@ Use these lightweight shapes for user-facing Monaiq output. Keep business meanin
 - **Proof:** read-backs, commands, and behavior states verified.
 - **Unresolved:** risks, skipped checks, blockers, or open questions.
 - **Next:** next recommended skill or no further action.
+
+## Evidence Backing
+
+Specialist workflow steps that present a recommendation, plan, or proposed change should lead with a business-readable summary of impact, then provide compact technical backing. Skills should reference this pattern by name instead of restating its contents.
+
+Technical backing fields:
+
+- **Codebase evidence:** files, frameworks, SDK/config state, existing feature/checkout paths.
+- **Journal decisions:** prior checkpoints, current checklist gate, recent milestone activity, blockers.
+- **Backend facts:** profile, catalog, offering, license, or checkout facts read back from MCP tools.
+- **Route-packet evidence:** active platform, target project, prior route assumptions, recommended skill, recommendation rationale.
+- **Labeled assumptions:** inferred decisions to confirm at the next existing checkpoint.
+- **Confidence and missing evidence:** what is known, what is inferred, and what would change the recommendation.
+
+Inferred decisions must be confirmed at the next existing checkpoint with labeled assumptions. Do not introduce a new checkpoint name solely to record evidence inference.

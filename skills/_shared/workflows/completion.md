@@ -1,14 +1,17 @@
 # Completion Workflow
 
-Before a skill exits or hands off to another skill:
+Before a skill exits or hands off to another skill, record only meaningful completion state:
 
-1. Call `monaiq_journal record_file_changes` with changed paths and intent only. Do not include file contents or secret values.
-2. Call `monaiq_journal update_checklist_progress` only for gates owned by the current skill, and only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence are recorded.
-3. Save `CHECKPOINT-SKILL-COMPLETE` when the user-visible journey state changed or a downstream skill needs durable proof.
-4. Include a no-secret `proofOfDone` packet in `CHECKPOINT-SKILL-COMPLETE`.
-5. Apply returned file operations locally and verify expected `.monaiq` files.
-6. Call `monaiq_journal skill_completed`.
-7. Recommend the next specialist skill or stop with unresolved risks.
+1. Coalesce changed paths, decisions, checklist progress, validation proof, unresolved risks, and downstream handoff data into the fewest journal actions the current `monaiq_journal` tool supports. Do not include file contents or secret values.
+2. Call `monaiq_journal record_file_changes` only when workspace paths actually changed; include changed paths and intent only.
+3. Call `monaiq_journal update_checklist_progress` only for gates owned by the current skill, and only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence are recorded.
+4. Save `CHECKPOINT-SKILL-COMPLETE` only when the completion itself is consequential: files or backend state changed, validation status changed, a downstream skill needs durable proof, or the user-visible journey gate changed. Do not save it after read-only explanation or when `skill_completed` plus the state packet is enough.
+5. Include a no-secret `proofOfDone` packet in `CHECKPOINT-SKILL-COMPLETE` when the checkpoint is used.
+6. Apply returned file operations locally and verify expected `.monaiq` files after each journal action that returns file operations.
+7. Call `monaiq_journal skill_completed` once per user-visible skill outcome, not after every internal tool step.
+8. Recommend the next specialist skill or stop with unresolved risks.
+
+Routine completion records should be sparse. A typical successful implementation skill has startup/resume, one or more hard checkpoint result writes, validation failure writes only if needed, and one completion/progress batch. Avoid separate back-to-back journal calls for file changes, checklist progress, completion checkpoint, and lifecycle when the same milestone can be represented more compactly without losing required evidence.
 
 ## proofOfDone Schema
 

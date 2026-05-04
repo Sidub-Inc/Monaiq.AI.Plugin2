@@ -32,24 +32,20 @@ Used by implement-purchase-flow for checkout configuration. Purchased EncodedCre
 </output-context>
 
 <execution_context>
-Before profile workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only session/profile status, terms review, credential availability summaries, and checkpointed terms acceptance guidance.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only session/profile status, terms review, credential availability summaries, and checkpointed terms acceptance guidance.
 </execution_context>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — terms acceptance is a checkpointed tool action).
 </monaiq-agent-handoff>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `profile-onboarding`.
+1. Run `_shared/workflows/startup.md` for `profile-onboarding`.
 2. Establish a session with `register_or_login`, then call `profile` to detect `ProfileStatus`, `ResellerStatus`, and `IssuerClientId`.
 3. Present status in business-readable terms: what the account can do now, what is blocked, and which next action unblocks catalog, checkout, or implementation work.
 4. Retrieve reseller credentials only when needed for catalog/checkout setup or explicitly requested. Never write raw `ApiKey`, `EncodedCredential`, `.env`, user-secrets, or secret-bearing values into prompts, `.monaiq`, summaries, docs, or generated plugin output.
 5. If the user wants to accept terms, stop at `CHECKPOINT-PRE-TERMS-ACCEPTANCE`, follow `_shared/workflows/checkpoint.md`, present the terms/privacy review state, record the user's approval result, then call `profile` step 4 only after approval.
-6. Record profile status summaries without secret values, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned journal operations, then call `skill_completed`.
+6. Coalesce profile status summaries, checklist progress, and handoff context through `_shared/workflows/completion.md` without secret values, then call `skill_completed` once.
 </workflow>
 
 <reference>

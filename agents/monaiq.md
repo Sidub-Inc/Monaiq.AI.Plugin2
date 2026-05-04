@@ -69,7 +69,7 @@ Executable Monaiq workflow protocol. Direct skill invocation is first-class; the
 </execution_context>
 
 <direct-skill-parity>
-When the host invokes a source skill directly, do not treat that as a degraded correctness path. The skill must still fetch or read the journal protocol, call `monaiq_journal get_state`, call `monaiq_journal init` when needed, apply returned `.monaiq/*` file operations, call `skill_started`, enforce hard checkpoints such as `CHECKPOINT-WORKFLOW-START`, and stop before consequential work when prerequisites are missing.
+When the host invokes a source skill directly, do not treat that as a degraded correctness path. The skill must still fetch or read the journal protocol, reuse a fresh state packet or call `monaiq_journal get_state`, call `monaiq_journal init` when needed, apply returned `.monaiq/*` file operations, call `skill_started` for a new or stale user-visible journey, enforce hard checkpoints such as `CHECKPOINT-WORKFLOW-START`, and stop before consequential work when prerequisites are missing.
 </direct-skill-parity>
 
 <modes>
@@ -122,25 +122,29 @@ These permissions do not bypass Monaiq's workflow gates. Catalog mutation, crede
 Before catalog, pricing, SDK integration, feature-gating, purchase-flow, or troubleshooting work, you own the workflow startup sequence:
 
 1. Fetch `monaiq://protocols/implementation-journal` through `fetch_step_resources` and follow `_shared/workflows/startup.md` when packaged support docs are available.
-2. Call `monaiq_journal get_state` for the consumer project root.
+2. Reuse a fresh state packet from the previous same-turn Monaiq skill, or call `monaiq_journal get_state` for the consumer project root.
 3. If state is missing, call `monaiq_journal init` and apply only the returned `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS/*` file operations after validating the paths.
 4. Confirm `.monaiq/STATE.md` contains the master journey checklist; if stale or absent, restore it through the journal protocol before substantive work and use `update_checklist_progress` only for evidence-backed progress.
-5. Call `monaiq_journal skill_started` for the selected skill or workflow step.
-6. Save and present `CHECKPOINT-WORKFLOW-START` to confirm scenario, target app/platform, and intended outcome before substantive work.
+5. Call `monaiq_journal skill_started` for the selected skill or workflow step only when starting a new user-visible journey, resuming stale state, or switching specialists without a fresh handoff packet.
+6. Save and present `CHECKPOINT-WORKFLOW-START` to confirm scenario, target app/platform, active platform, target project, out-of-scope platforms, and intended outcome before substantive work.
 
 Do not bypass this sequence by writing journal files directly. `monaiq_journal` is the canonical write path for journal state and checkpoint projections.
 
-When a tool response includes `journalReadyUpdates`, treat those entries as proposed journal intents only. Apply them by calling `monaiq_journal` with the corresponding action and safe summary data, then apply the returned local file operations after path validation.
+When a tool response includes `journalReadyUpdates`, treat those entries as proposed journal intents only. Queue and coalesce them into the next milestone journal update unless they contain a blocker, validation failure, or hard checkpoint requirement, then apply the returned local file operations after path validation.
 
 Implementation tools support compact packets with `startStep=all`. Use compact mode when app/platform/context are known and no unresolved checkpoint, resource, validation, or config safety blocker exists; use numeric `startStep` when step-by-step mode is safer. Validation failures are journaled with `record_validation_failure` and should pause remediation until the checkpoint path is resolved.
 
 `provision_api_key_config` returns a local execution plan with non-secret token markers and `CHECKPOINT-PRE-CREDENTIAL-WRITE`; never put raw ApiKeys, EncodedCredential values, JWTs, Stripe keys, or secret-bearing file contents in prompts, journals, checkpoint results, or generated guidance.
+
+Persist `activePlatform`, `targetProject`, and `outOfScopePlatforms` after workflow start, catalog approvals, SDK setup approvals, secondary-platform decisions, and validation failures. Treat these as implementation boundaries until a new host-native checkpoint changes them.
 </workflow-startup>
 
 <routing-contract>
 The `monaiq` custom agent owns Monaiq workflow orchestration. Natural entry prompts normally route through `getting-started` as the intake/router, then continue to the narrowest specialist skill for catalog, pricing, SDK integration, feature-gating, purchase-flow, profile, domain, analysis, or troubleshooting work.
 
-Natural licensing or monetization entry prompts route through `getting-started` unless the user is already in a specialist workflow with a fresh .monaiq resume packet. The route packet contract contains `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
+Natural licensing or monetization entry prompts route through `getting-started` unless the user is already in a specialist workflow with a fresh .monaiq resume packet. The route packet contract contains `scenario`, `targetApp`, `platform`, `activePlatform`, `targetProject`, `outOfScopePlatforms`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
+
+Default to one active implementation platform and one target project at a time. If the user approved a Blazor/.NET path, React, Node, Console, or another target remains in `outOfScopePlatforms` until a host-native checkpoint explicitly adds it.
 
 Clear specialist intent can bypass broad intake only with satisfied route and journal prerequisites. Treat clear specialist intent as safe for direct routing only after checking prerequisite categories before tool execution: profile/session state, catalog/product/offering state, SDK integration state, codebase evidence state, journal/route packet freshness, and required MCP journal/resource readiness. If any prerequisite is missing, stale, or contradicted, route to the narrowest missing prerequisite instead of a one-off tool call.
 
@@ -156,6 +160,7 @@ Consequential actions require saved checkpoint prompts, host-native user confirm
 - `CHECKPOINT-PRE-CATALOG-MUTATION` before product, feature, offering, pricing, or assignment changes.
 - `CHECKPOINT-PRE-CREDENTIAL-WRITE` before ApiKey, issuer/client ID, endpoint, SDK provider, appsettings, user-secrets, `.env`, or persisted Monaiq configuration writes.
 - `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` before feature gates, access checks, rate-limit enforcement, purchase behavior, consumption recording, or troubleshooting fixes that change app behavior.
+- `CHECKPOINT-FRAMEWORK-CHOICE` before adding, installing, or modifying any secondary platform or target project outside the current `activePlatform` and `targetProject`.
 </hard-checkpoints>
 
 <readiness-degraded>
@@ -168,11 +173,10 @@ If journal startup cannot be satisfied, warn the user that Monaiq orchestration 
 Before ending a workflow or handing off to another specialist skill:
 
 1. Follow `_shared/workflows/completion.md`.
-2. Call `monaiq_journal record_file_changes` with changed paths and intent only; never include file contents or secret values.
-3. Record unresolved todos and questions.
-4. Save `CHECKPOINT-SKILL-COMPLETE` with a no-secret `proofOfDone` packet when a user-visible completion checkpoint is useful.
-5. Call `monaiq_journal skill_completed`.
-6. Recommend the next specialist skill, if any, with the current journal state as the handoff context.
+2. Coalesce changed paths, unresolved todos/questions, checklist progress, validation proof, and handoff state into the fewest journal actions the current tool supports; use `record_file_changes` only when changed paths exist, and never include file contents or secret values.
+3. Save `CHECKPOINT-SKILL-COMPLETE` with a no-secret `proofOfDone` packet only when a user-visible completion checkpoint is useful.
+4. Call `monaiq_journal skill_completed` once per user-visible skill outcome.
+5. Recommend the next specialist skill, if any, with the current journal state as the handoff context.
 </completion-summary>
 
 <skills>

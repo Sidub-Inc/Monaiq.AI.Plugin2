@@ -15,6 +15,10 @@ tier: 1
 invoked-by: [user]
 ---
 
+<objective>
+Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from available context (error messages, code, configuration), then fall back to interactive diagnostic questions if the category or resolution can't be determined autonomously. Reference the troubleshooting resource as the diagnostic knowledge source.
+</objective>
+
 <output-context>
 Provides to requesting context:
 - diagnosis: { category: "setup" | "auth" | "validation" | "consumption", symptom, resolution, resolved: boolean }
@@ -22,36 +26,30 @@ Provides to requesting context:
 This is a support entry point — users come here directly when something is broken.
 </output-context>
 
-<monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
-</monaiq-agent-handoff>
-
 <execution_context>
-Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only failure diagnosis, remediation options, and validation proof decisions.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only failure diagnosis, remediation options, and validation proof decisions.
 </execution_context>
 
-<objective>
-Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from available context (error messages, code, configuration), then fall back to interactive diagnostic questions if the category or resolution can't be determined autonomously. Reference the troubleshooting resource as the diagnostic knowledge source.
-</objective>
+<monaiq-agent-handoff>
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — fixes that change code/config require `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`).
+</monaiq-agent-handoff>
 
 <checkpoint-workflow-directive>
 For `CHECKPOINT-APPLY-FIX`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, validation-remediation checkpoints, and any other hard checkpoint, follow `_shared/workflows/checkpoint.md` exactly. Use `checkpoint` in `monaiq_journal save_checkpoint` payloads, record the user's `result`, apply returned `.monaiq/*` file operations, and verify the checkpoint file exists before fixes continue.
 </checkpoint-workflow-directive>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `troubleshoot-integration`.
+1. Run `_shared/workflows/startup.md` for `troubleshoot-integration`.
 2. Fetch `monaiq://troubleshooting` before diagnosis. When the SDK stack is known, also fetch `monaiq://sdk/{stack}/setup`; supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
 3. Capture the symptom from available evidence first: error text, stack trace, HTTP status, affected operation, relevant code/config area, recent journal decisions, profile/catalog/offering state, and validation command/result when available.
 4. Classify the issue as setup, auth, validation, consumption, or checkout. Ask the user only when evidence cannot identify the category or missing input blocks diagnosis.
-5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, and missing evidence.
+5. Present the diagnosis using `_shared/response-patterns.md` "Evidence Backing".
 6. Follow the troubleshooting decision tree to form a likely root cause and proposed fix. If missing SDK/catalog/offering/profile/code evidence prevents a confident remediation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
 7. Gate fixes: read-only diagnostic recommendations use `CHECKPOINT-APPLY-FIX`; behavior-changing fixes use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`. Record the user's result before edits.
 8. Apply the smallest targeted fix, then verify with the relevant build, runtime, checkout, credential, or feature-check command. After validation failures, call `monaiq_journal record_validation_failure` with the observed error, validation command/result, likely cause, blocked next action, retry choices, and checkpoint requirement before further edits; use a failure-specific checkpoint before continuing remediation.
-9. Record `record_error` when useful, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned operations, then call `skill_completed` and hand off persisted `validationProof`.
+9. Coalesce useful error summaries, changed paths, validation proof, and handoff context through `_shared/workflows/completion.md`; use `record_file_changes` only when remediation changed workspace paths. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` only when useful, apply returned operations, then call `skill_completed` once and hand off persisted `validationProof`.
+
+When a setup or DI error indicates Monaiq guidance may be wrong for the installed SDK package/version, stop and record a plugin guidance defect with the package version, failing command, and compile/runtime error. Do not inspect DLLs, XML docs, NuGet caches, generated binaries, or local package folders to discover SDK signatures.
 </workflow>
 
 <reference>

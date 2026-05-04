@@ -19,15 +19,11 @@ Add an in-app license purchase flow tied to published offerings, reliable custom
 </objective>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — checkout architecture and credential persistence require hard checkpoints).
 </monaiq-agent-handoff>
 
 <execution_context>
-Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only checkout, result handling, credential persistence, post-purchase refresh, and purchase validation decisions.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only checkout, result handling, credential persistence, post-purchase refresh, and purchase validation decisions.
 </execution_context>
 
 <input-output-contract>
@@ -53,16 +49,16 @@ For `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `C
 </checkpoint-workflow-directive>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `implement-purchase-flow` or resume through `CHECKPOINT-RESUME`.
+1. Run `_shared/workflows/startup.md` for `implement-purchase-flow`.
 2. Read the master journey checklist from `.monaiq/STATE.md`; this skill owns only the purchase flow when applicable gate. Establish prerequisites: SDK integrated, active session, profile credentials available server-side, published offerings available, and resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://config/endpoints`, `monaiq://docs/anti-patterns/{platform}`, `monaiq://domain/model`, and `monaiq://platforms/api-surface/{platform}`. Missing SDK routes to `implement-licensing`; missing offerings route to `manage-catalog`.
 3. Detect existing checkout implementation and purchase UI entry points before proposing new routes/components.
 4. Use evidence before asking a new question. Infer checkout architecture from existing routes, server/API boundaries, auth/session shape, purchase UI entry points, SDK state, offering facts, credential handling policy, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-CHECKOUT-ARCHITECTURE`, with labeled assumptions for checkout architecture, feature path, credential handling, and next steps. Do not add a new checkpoint name solely for evidence inference.
-5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, selected offerings, architecture, credential persistence policy, and validation plan.
-6. Call `implement_purchase_flow` with `startStep=all` when platform, offering availability, required resources, credential handling, and checkout architecture are known; use numbered steps only when step-by-step review improves safety. Apply `journalReadyUpdates` through `monaiq_journal`.
+5. Present the plan using `_shared/response-patterns.md` "Evidence Backing" plus selected offerings, architecture, credential persistence policy, and validation plan.
+6. Call `implement_purchase_flow` with `startStep=all` when platform, offering availability, required resources, credential handling, and checkout architecture are known; use numbered steps only when step-by-step review improves safety. Coalesce `journalReadyUpdates` into the next milestone journal update unless they contain a blocker, validation failure, or hard checkpoint requirement.
 7. Stop at `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, or `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK` before checkout routes, success handlers, provider behavior, post-purchase refresh, credential persistence, or frontend/API-key exposure decisions. Do not journal ApiKey or EncodedCredential values.
 8. Apply checkout, success, persistence, and UI changes using the authoritative tool/resource guidance only. If guidance is missing, contradictory, or insufficient, stop and record a plugin guidance defect.
 9. Validate checkout session creation, result retrieval, credential storage, state refresh, and feature checks. On checkout/build/validation failure, call `monaiq_journal record_validation_failure` before remediation.
-10. Record changed paths only with `record_file_changes`, then call `update_checklist_progress` for purchase flow when applicable only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. The purchase-flow checklist item cannot be marked complete without SDK/tool evidence: implement_purchase_flow evidence, canonical resource evidence, and checkpoint/journal evidence must all be present. If any evidence is missing, record a blocked checklist gate through the plugin guidance defect path. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned operations, call `skill_completed`, and hand off persisted `checkoutImpl` plus `validationProof`.
+10. Coalesce changed paths, validation proof, purchase-flow checklist progress, and `checkoutImpl` handoff through `_shared/workflows/completion.md`. Call `update_checklist_progress` for purchase flow when applicable only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. The purchase-flow checklist item cannot be marked complete without SDK/tool evidence: implement_purchase_flow evidence, canonical resource evidence, and checkpoint/journal evidence must all be present. If any evidence is missing, record a blocked checklist gate through the plugin guidance defect path. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` only when useful, apply returned operations, call `skill_completed` once, and hand off persisted `checkoutImpl` plus `validationProof`.
 </workflow>
 
 <experience-contract>

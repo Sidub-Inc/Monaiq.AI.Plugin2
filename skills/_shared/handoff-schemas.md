@@ -7,6 +7,9 @@ Persist handoff packets in `.monaiq/STATE.md` summaries or `.monaiq/JOURNAL.md` 
 - `scenario`
 - `targetApp`
 - `platform`
+- `activePlatform`
+- `targetProject`
+- `outOfScopePlatforms`
 - `profileState`
 - `catalogState`
 - `codeEvidenceSummary`
@@ -16,6 +19,8 @@ Persist handoff packets in `.monaiq/STATE.md` summaries or `.monaiq/JOURNAL.md` 
 - `recommendationRationale`
 - `checkpointName`
 - `authorizedBy`
+
+`activePlatform`, `targetProject`, and `outOfScopePlatforms` are routing boundaries, not decoration. Persist them after workflow start, catalog mutation approval, SDK setup approval, secondary-platform approval/denial, and validation-failure checkpoints so downstream skills do not broaden scope silently.
 
 ## catalogSpec
 
@@ -31,9 +36,23 @@ Persist handoff packets in `.monaiq/STATE.md` summaries or `.monaiq/JOURNAL.md` 
 ## sdkConfig
 
 - `platform`
+- `activePlatform`
+- `targetProject`
+- `outOfScopePlatforms`
 - `credentialSource`
 - `serviceOptionsConfigured`
 - `diRegistered`
+
+## scopeBoundary
+
+- `activePlatform`
+- `targetProject`
+- `approvedSecondaryPlatforms[]`
+- `outOfScopePlatforms[]`
+- `checkpointName`
+- `authorizedBy`
+
+Use `scopeBoundary` when a journey might touch more than one project or stack. Do not add React, Node, Console, or another target to a .NET/Blazor implementation unless the checkpoint result explicitly approves that expansion.
 
 ## featureImpl
 

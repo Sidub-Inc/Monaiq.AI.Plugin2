@@ -38,26 +38,22 @@ Discovery chain endpoint: design-monetization [pricingPlan] → manage-catalog (
 </output-context>
 
 <execution_context>
-Before monetization strategy steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only catalog-ready pricing strategy and feature-assignment recommendations; catalog mutation belongs to `manage-catalog`.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only catalog-ready pricing strategy and feature-assignment recommendations; catalog mutation belongs to `manage-catalog`.
 </execution_context>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — `CHECKPOINT-PRICING-APPROVAL` is a hard checkpoint).
 </monaiq-agent-handoff>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `design-monetization`.
+1. Run `_shared/workflows/startup.md` for `design-monetization`.
 2. Resolve `monaiq://patterns/pricing` and `monaiq://domain/model` before proposing tiers. Stop before pricing recommendations if pricing or entity context is unavailable.
 3. Gather inputs from `selectedScenario`, capability evidence, route packet, journal decisions, and existing offerings. If upstream context is missing, ask only the narrowest strategic question needed to choose a pricing direction.
 4. Call `offering` list when catalog context is available, then treat existing offerings as evidence for refinement rather than overwriting them.
-5. Present a business-readable evidence summary first, then compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and pricing-pattern rationale.
+5. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus pricing-pattern rationale.
 6. Propose a complete tier structure up front using fetched pricing patterns, then refine through user feedback.
 7. Use `CHECKPOINT-PRICING-APPROVAL` before treating pricing, tier, or feature-assignment strategy as approved for catalog creation.
-8. Output a catalog-ready `pricingPlan` for `manage-catalog`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned journal operations, then call `skill_completed`.
+8. Output a catalog-ready `pricingPlan` for `manage-catalog`, coalesce pricing decisions, checklist progress, and handoff context into the completion workflow, then call `skill_completed` once.
 </workflow>
 
 <reference>

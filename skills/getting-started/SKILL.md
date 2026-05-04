@@ -32,25 +32,17 @@ Executable Monaiq workflow protocol. Direct skill invocation is first-class; the
 </required_reading>
 
 <direct-invocation-contract>
-Direct skill invocation is first-class. If the host can activate `monaiq`, hand off loaded request and journal context; if it cannot, warn once and continue with this skill's executable protocol. The custom monaiq agent is optional convenience only, not a correctness dependency.
-
-The fallback is not degraded: call `monaiq_journal get_state`, call `monaiq_journal init` when state is absent, apply returned .monaiq/* file operations after path validation, call `skill_started`, present and save `CHECKPOINT-WORKFLOW-START`, then route to the narrowest specialist. Stop before consequential work when journal, route, catalog, SDK, code evidence, or MCP readiness prerequisites are missing.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant). For this skill, that means: call `monaiq_journal get_state` unless a fresh state packet is already available in this turn, call `monaiq_journal init` when state is absent, apply returned `.monaiq/*` file operations after path validation, call `skill_started` for a new or stale journey, present and save `CHECKPOINT-WORKFLOW-START`, then route to the narrowest specialist. Stop before consequential work when journal, route, catalog, SDK, code evidence, or MCP readiness prerequisites are missing.
 </direct-invocation-contract>
-
-<monaiq-agent-handoff>
-This skill runs correctly when invoked directly or through the optional `monaiq` custom agent. If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still uses the same direct-invocation contract above: fetch journal protocol, initialize and apply `.monaiq/*` operations when needed, call `skill_started`, enforce `CHECKPOINT-WORKFLOW-START`, and route to the narrowest specialist skill.
-</monaiq-agent-handoff>
 
 <process_steps>
 1. Fetch `monaiq://protocols/implementation-journal` and read the shared route/checkpoint contract plus `_shared/workflows/startup.md`.
-2. Call `monaiq_journal get_state`; when no state exists, call `monaiq_journal init` and apply returned `.monaiq/*` file operations under the consumer project root.
+2. Call `monaiq_journal get_state` unless a fresh state packet is already available in this turn; when no state exists, call `monaiq_journal init` and apply returned `.monaiq/*` file operations under the consumer project root.
 3. Verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist when the returned operations indicate they should. Verify the master journey checklist is present in `.monaiq/STATE.md`; if it is absent, use `monaiq_journal init` or `update_checklist_progress` from `monaiq://protocols/implementation-journal` to restore the compact resume/control packet before routing.
-4. Call `monaiq_journal skill_started` for `getting-started` unless resuming from a fresh state packet.
-5. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, intended outcome, and any inferred assumptions; continue only after recording the approval result.
+4. Call `monaiq_journal skill_started` for `getting-started` only for a new, stale, or materially changed journey; skip it when resuming from a fresh state packet.
+5. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, `activePlatform`, `targetProject`, `outOfScopePlatforms`, intended outcome, and any inferred assumptions; continue only after recording the approval result.
 6. Inspect profile, catalog, code, journal evidence, and master journey checklist gates before asking detailed questions.
-7. Emit one route packet with the exact shared fields and hand off to the narrowest missing prerequisite or specialist skill.
+7. Emit one route packet with the exact shared fields, including `activePlatform`, `targetProject`, and `outOfScopePlatforms`, and hand off to the narrowest missing prerequisite or specialist skill.
 </process_steps>
 
 <resume-mode>
@@ -63,14 +55,14 @@ If `fetch_step_resources`, `monaiq_journal`, or a required MCP tool is unavailab
 
 <anti_patterns>
 - Do not treat direct skill invocation as a lower-quality path.
-- Do not skip `monaiq_journal get_state`, `monaiq_journal init`, returned operation application, `skill_started`, or hard checkpoints because the custom agent is unavailable.
+- Do not skip required journal startup, `monaiq_journal init`, returned operation application, `skill_started` for new or stale journeys, or hard checkpoints because the custom agent is unavailable.
 - This intake/router skill must not perform substantive catalog, SDK, feature, purchase, or troubleshooting work itself.
 - Do not ask low-value questions when existing code, journal, profile, or catalog evidence supports an inference that can be confirmed in the next checkpoint.
 </anti_patterns>
 
 <success_criteria>
-- Direct invocation initializes or resumes `.monaiq` state, applies returned `.monaiq/*` file operations, records `skill_started`, and enforces `CHECKPOINT-WORKFLOW-START`.
-- The route packet preserves `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
+- Direct invocation initializes or resumes `.monaiq` state, applies returned `.monaiq/*` file operations, records `skill_started` when the journey is new or stale, and enforces `CHECKPOINT-WORKFLOW-START`.
+- The route packet preserves `scenario`, `targetApp`, `platform`, `activePlatform`, `targetProject`, `outOfScopePlatforms`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
 - The user sees one business-readable recommendation with compact technical backing and a specialist handoff.
 - Missing prerequisites route to the narrowest missing prerequisite and stop before consequential work.
 </success_criteria>
@@ -99,7 +91,7 @@ Provides to downstream skills:
 - userScenario: "greenfield" | "brownfield" | "returning" — classified in Step 3
 - detectedState: { hasProducts: boolean, hasOfferings: boolean, profileComplete: boolean, resellerEnabled: boolean }
 - quickStartSpec (optional, greenfield only): { appDescription: string, pricingChoice: string } — from Quick Start Step 4
-- route packet: { scenario, targetApp, platform, profileState, catalogState, codeEvidenceSummary, journalEvidenceSummary, assumptions, recommendedSkill, recommendationRationale, checkpointName, authorizedBy }
+- route packet: { scenario, targetApp, platform, activePlatform, targetProject, outOfScopePlatforms, profileState, catalogState, codeEvidenceSummary, journalEvidenceSummary, assumptions, recommendedSkill, recommendationRationale, checkpointName, authorizedBy }
 
 Routes to:
 - manage-catalog: receives { userScenario, detectedState, quickStartSpec? }

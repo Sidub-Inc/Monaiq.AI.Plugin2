@@ -14,7 +14,7 @@ Executable Monaiq workflow protocol. Direct skill invocation is first-class; the
 
 <process_steps>
 1. Treat natural licensing or monetization prompts as `getting-started` unless the request already has a fresh route packet and journal state.
-2. For direct skill invocation, warn once if the custom agent cannot be activated, then call `monaiq_journal get_state` or `monaiq_journal init`, apply returned .monaiq/* file operations, call `skill_started`, enforce hard checkpoints, and stop before consequential work when prerequisites are missing.
+2. For direct skill invocation, warn once if the custom agent cannot be activated, then reuse a fresh state packet or call `monaiq_journal get_state` / `monaiq_journal init`, apply returned .monaiq/* file operations, call `skill_started` for a new or stale user-visible journey, enforce hard checkpoints, and stop before consequential work when prerequisites are missing.
 3. Consume the master journey checklist from `monaiq://protocols/implementation-journal` and `.monaiq/STATE.md`; route readiness should come from backend facts plus checklist gates, not transcript memory.
 4. Preserve the exact route packet fields: `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
 5. Route to the narrowest missing prerequisite or specialist skill that can perform the next substantive work, and use `update_checklist_progress` only when evidence supports a gate update.
@@ -52,7 +52,7 @@ The custom monaiq agent is an optional orchestrator; source skills remain author
 
 Direct skill invocation must self-handoff to `monaiq` when the host can activate the custom agent. If the host cannot switch agents, the skill must use the degraded fallback defined by source skills: warn that orchestration is degraded, load or initialize the journal through `monaiq_journal`, and enforce the same hard checkpoints before consequential work.
 
-Direct skill invocation compatibility fallback: warn once, fetch the implementation-journal protocol when available, call `monaiq_journal get_state` or `monaiq_journal init`, apply returned `.monaiq/*` file operations, call `skill_started`, enforce hard checkpoints, and stop before consequential work when required tools are missing.
+Direct skill invocation compatibility fallback: warn once, fetch the implementation-journal protocol when available, reuse a fresh state packet or call `monaiq_journal get_state` / `monaiq_journal init`, apply returned `.monaiq/*` file operations, call `skill_started` for a new or stale user-visible journey, enforce hard checkpoints, and stop before consequential work when required tools are missing.
 
 ## Resume Scenario
 
@@ -78,8 +78,12 @@ Clear specialist intent may bypass `getting-started` only with satisfied route a
 
 ## Tier Summary
 
-| Skill | Owner Agent | Tier | Category | Responsibility | Invoked-By | Auto-Invoke |
-|-------|-------------|------|----------|----------------|------------|-------------|
+Every skill below declares `agent: monaiq` and an `auto-invoke:` block in its frontmatter, so all are model-invocable in every host. The "Primary Entry" column reflects routing **intent** \u2014 whether the skill is a top-of-funnel entry point or a deeper specialist that should normally be reached via the route packet from another skill. It does not disable model invocation.
+
+For the canonical skill section order, route-packet field names, direct-invocation contract, and tool-operation rules, see `_shared/protocols.md`.
+
+| Skill | Owner Agent | Tier | Category | Responsibility | Invoked-By | Primary Entry |
+|-------|-------------|------|----------|----------------|------------|---------------|
 | getting-started | monaiq | 1 | onboarding | Session setup, state detection, and next-workflow routing | user | Yes |
 | troubleshoot-integration | monaiq | 1 | integration | Diagnose setup, auth, validation, checkout, and consumption issues | user | Yes |
 | design-monetization | monaiq | 1 | strategy | Design catalog-ready pricing tiers without creating entities | user, analyze-codebase, getting-started | Yes |

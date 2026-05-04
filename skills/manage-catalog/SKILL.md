@@ -18,21 +18,17 @@ Create or update a Monaiq product catalog through evidence-backed recommendation
 </objective>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — catalog mutations require hard checkpoints).
 </monaiq-agent-handoff>
 
 <execution_context>
-Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only catalog-specific decisions and tool calls.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only catalog-specific decisions and `product`/`product_feature`/`offering`/`feature_offering` tool calls.
 </execution_context>
 
 <input-output-contract>
-Input from `getting-started`: `userScenario`, `detectedState`, and optional `quickStartSpec`. Direct invocation must rebuild equivalent context through session/profile/catalog state detection.
+Input from `getting-started`: `userScenario`, `detectedState`, optional `quickStartSpec`, and route boundaries (`activePlatform`, `targetProject`, `outOfScopePlatforms`). Direct invocation must rebuild equivalent context through session/profile/catalog state detection.
 
-Output: `catalogSpec: { productCode, features: [{ key, type, displayName }], offerings: [{ code, classification, baseRate, currency, interval }], assignments: [{ featureKey, offeringCode, accessLevel | rateLimit }] }` plus `catalogComplete: true` after read-back verification. Downstream chain: `manage-catalog` -> `implement-licensing` -> `implement-feature`.
+Output: `catalogSpec: { productCode, features: [{ key, type, displayName }], offerings: [{ code, classification, baseRate, currency, interval }], assignments: [{ featureKey, offeringCode, accessLevel | rateLimit }] }`, preserved route boundaries (`activePlatform`, `targetProject`, `outOfScopePlatforms`), plus `catalogComplete: true` after read-back verification. Downstream chain: `manage-catalog` -> `implement-licensing` -> `implement-feature`.
 </input-output-contract>
 
 <checkpoint-workflow-directive>
@@ -40,16 +36,15 @@ For `CHECKPOINT-PRE-CATALOG-MUTATION`, `CHECKPOINT-PRE-PUBLISH-OFFERING`, and an
 </checkpoint-workflow-directive>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize and apply returned `.monaiq/*` operations if needed, then call `skill_started` for `manage-catalog`.
+1. Run `_shared/workflows/startup.md` for `manage-catalog`.
 2. Read the master journey checklist from `.monaiq/STATE.md`; this skill owns only the catalog and offerings gate. Establish prerequisites: active session, `ResellerStatus = Enabled`, and `monaiq://domain/model` fetched. Stop before catalog mutation when session/profile/domain evidence is missing.
 3. Detect backend catalog state in order: `product` list, `product_feature` list for relevant products, `offering` list, and `feature_offering` list for offerings. Backend catalog state wins; journal records decisions and outcomes only.
 4. Use evidence before asking a new question. Infer catalog recommendation next steps from codebase evidence, route packet context, existing product/offering facts, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-PRE-CATALOG-MUTATION`, with labeled assumptions for product structure, feature path, offering shape, credential handling impact, checkout architecture impact, and next steps. Do not add a new checkpoint name solely for evidence inference.
-5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and the exact `product`, `product_feature`, `offering`, or `feature_offering` operations proposed.
-  Every product, feature, offering, pricing, or assignment proposal is an evidence-backed catalog recommendation.
+5. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus the exact `product`, `product_feature`, `offering`, or `feature_offering` operations proposed. Every product, feature, offering, pricing, or assignment proposal is an evidence-backed catalog recommendation.
 6. Stop at `CHECKPOINT-PRE-CATALOG-MUTATION` before any `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete call. Record the user's result before tool calls run.
 7. Execute catalog mutations in dependency order: product, features, offerings, feature assignments. Keep offerings in Draft unless the user explicitly approves publication through `CHECKPOINT-PRE-PUBLISH-OFFERING`.
 8. Perform mandatory read-back verification after create/update of paid-tier assignments: list `feature_offering` rows for each paid offering, verify intended `ServiceAccessLevel` or rate-limit values, and stop on mismatches before claiming catalog completion.
-9. Record changed catalog entities with `monaiq_journal`, then call `update_checklist_progress` for catalog and offerings only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned operations, call `skill_completed`, and hand off persisted `catalogSpec` to `implement-licensing`.
+9. Coalesce changed catalog entities, read-back proof, checklist progress, preserved route boundaries, and `catalogSpec` handoff through `_shared/workflows/completion.md`. Call `update_checklist_progress` for catalog and offerings only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` only when useful, apply returned operations, call `skill_completed` once, and hand off persisted `catalogSpec` plus `activePlatform`, `targetProject`, and `outOfScopePlatforms` to `implement-licensing`.
 </workflow>
 
 <reference>

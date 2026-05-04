@@ -19,15 +19,11 @@ Add license feature checks to an SDK-integrated .NET or React app without guessi
 </objective>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — business-logic edits require `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`).
 </monaiq-agent-handoff>
 
 <execution_context>
-Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only feature-gate, rate-limit, consumption, and validation decisions.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only feature-gate, rate-limit, consumption, and validation decisions.
 </execution_context>
 
 <input-output-contract>
@@ -49,17 +45,17 @@ For `CHECKPOINT-FEATURE-SELECTION`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, and an
 </checkpoint-workflow-directive>
 
 <workflow>
-1. Read or fetch `monaiq://protocols/implementation-journal`, then call `monaiq_journal get_state`; if direct invocation found no state, initialize and apply returned `.monaiq/*` file operations before proceeding.
-2. Call `monaiq_journal skill_started` for `implement-feature`, or resume through `CHECKPOINT-RESUME` when the state packet is current.
+1. Run `_shared/workflows/startup.md` for `implement-feature`.
+2. Resume through `CHECKPOINT-RESUME` when the state packet is current; call additional journal startup actions only when the shared startup workflow reports missing or stale state.
 3. Read the master journey checklist from `.monaiq/STATE.md`; this skill owns only the feature implementation gate. Establish prerequisites in this order: SDK integration present, product features available, platform resources fetched, existing feature checks scanned. Missing SDK routes to `implement-licensing`; missing catalog features route to `manage-catalog`.
 4. Fetch required resources before implementation: `monaiq://domain/model`, `monaiq://domain/namespaces`, `monaiq://platforms/api-surface/{platform}`, `monaiq://docs/anti-patterns/{platform}`, `monaiq://sdk/{stack}/setup`, and `monaiq://platforms/pitfalls/{platform}`.
 5. Use evidence before asking a new question. Infer the feature path from the selected feature, route packet, existing UI/business-logic location, SDK state, catalog/offering facts, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-FEATURE-SELECTION` or `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, with labeled assumptions for credential handling impact, checkout architecture impact, feature path, and next steps. Do not add a new checkpoint name solely for evidence inference.
-6. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, selected feature, feature kind, source files/areas, confidence, missing evidence, and validation plan.
-7. Call `implement_product_feature` with `startStep=all` when context is sufficient; use `startStep=1` then `startStep=2` only when step-by-step review improves safety. Treat `journalReadyUpdates` as intents that must be applied through `monaiq_journal`, not as already-applied state.
+6. Present the plan using `_shared/response-patterns.md` "Evidence Backing" plus selected feature, feature kind, source files/areas, and validation plan.
+7. Call `implement_product_feature` with `startStep=all` when context is sufficient; use `startStep=1` then `startStep=2` only when step-by-step review improves safety. Treat `journalReadyUpdates` as intents to coalesce into the next milestone journal update, not as already-applied state or a reason to journal between every tool call.
 8. Stop at `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT` before adding or changing feature gates, access checks, rate-limit assertions, consumption recording, UI locked states, or other business logic. Record the user's approval result before edits.
 9. Apply code changes using the authoritative tool/resource guidance only. If guidance is missing, contradictory, or insufficient, stop and record a plugin guidance defect with `monaiq_journal record_error`.
 10. Build and exercise allow, denied, expired/misconfigured, and over-limit paths where applicable. Record validation failures with `monaiq_journal record_validation_failure` before remediation.
-11. Record changed paths only with `record_file_changes`, then call `update_checklist_progress` for feature implementation only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned file operations, then call `skill_completed` and hand off persisted `featureImpl` or `validationProof`.
+11. Coalesce changed paths, validation proof, feature implementation checklist progress, and `featureImpl` handoff through `_shared/workflows/completion.md`; use `record_file_changes` only when changed paths exist. Call `update_checklist_progress` for feature implementation only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` only when useful, apply returned file operations, then call `skill_completed` once and hand off persisted `featureImpl` or `validationProof`.
 </workflow>
 
 <experience-contract>

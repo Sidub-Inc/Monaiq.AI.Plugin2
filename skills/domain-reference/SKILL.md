@@ -34,11 +34,11 @@ This is a support skill — invoked on-demand by other skills, not part of a lin
 </output-context>
 
 <monaiq-agent-handoff>
-Read-only domain explanation can proceed after resource fetch. If the user asks for follow-up work that changes catalog data, credentials/config, or app behavior, enter the full `monaiq` workflow startup first: fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state` or `monaiq_journal init`, call `skill_started`, and enforce the relevant hard checkpoints before consequential changes.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (read-only variant). Pivot to the mutation-capable variant the moment the user asks for catalog, credential/config, or app-behavior changes.
 </monaiq-agent-handoff>
 
 <execution_context>
-This is a read-only reference skill. Use `_shared/response-patterns.md` and `_shared/protocols.md` for business-readable answers and mutation boundaries. If the user pivots to catalog mutation, credential/config writes, or app behavior changes, enter the full startup/checkpoint flow through the relevant specialist skill.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This is a read-only reference skill; it answers domain questions without journal startup unless the user pivots to consequential work.
 </execution_context>
 
 <workflow>

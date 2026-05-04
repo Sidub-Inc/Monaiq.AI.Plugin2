@@ -34,27 +34,23 @@ Discovery chain: analyze-codebase [capabilities] → scenario-advisor [selectedS
 </output-context>
 
 <execution_context>
-Before discovery steps, follow `_shared/workflows/startup.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. Use `_shared/workflows/checkpoint.md` for `CHECKPOINT-ANALYSIS-SCOPE` or any scope-changing approval. This skill contributes only read-only codebase evidence, capability classification, and downstream discovery handoff.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only read-only codebase evidence, capability classification, and downstream discovery handoff. Uses `_shared/workflows/checkpoint.md` for `CHECKPOINT-ANALYSIS-SCOPE`.
 </execution_context>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — journal startup applies because catalog gap analysis writes journal evidence).
 </monaiq-agent-handoff>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `analyze-codebase`.
+1. Run `_shared/workflows/startup.md` for `analyze-codebase`.
 2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before classifying capabilities. Stop before recommendation if taxonomy or domain context is unavailable.
 3. Determine scan scope from route context, prior journal state, existing conversation analysis, and project structure. Use `CHECKPOINT-ANALYSIS-SCOPE` before broad scans or scope changes.
 4. If products exist, call `product_feature` list and compare catalog features against codebase findings so the output can distinguish existing coverage from gaps.
 5. Scan project configuration and key business-code areas. Keep evidence bounded: file paths, area summaries, observed patterns, and confidence; do not quote secrets or dump full files.
 6. Classify findings as Access or RateLimit features using fetched scenario/domain taxonomy. Generate stable suggested FeatureKey values.
-7. Present a business-readable evidence summary first, then compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and source areas.
+7. Present the evidence packet using `_shared/response-patterns.md` "Evidence Backing" plus source areas.
 8. If missing or stale evidence prevents a confident recommendation, route to `analyze-codebase`, profile/catalog state detection, or the narrowest prerequisite journey step before catalog/pricing recommendations.
-9. Output the codebase evidence packet for `scenario-advisor`, record analysis artifacts with `monaiq_journal`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, then call `skill_completed`.
+9. Output the codebase evidence packet for `scenario-advisor`, coalesce analysis artifacts, checklist progress, and handoff context into the completion workflow, then call `skill_completed` once.
 </workflow>
 
 <reference>

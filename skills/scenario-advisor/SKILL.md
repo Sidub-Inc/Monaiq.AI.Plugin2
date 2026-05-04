@@ -35,25 +35,21 @@ Discovery chain: analyze-codebase [capabilities] → scenario-advisor [selectedS
 </output-context>
 
 <execution_context>
-Before scenario recommendation steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only licensing-scenario recommendation and handoff context; exact prices and catalog mutation belong to `design-monetization` and `manage-catalog`.
+Follows the skill layout and shared workflows in `_shared/protocols.md`. This skill contributes only licensing-scenario recommendation and handoff context; exact prices and catalog mutation belong to `design-monetization` and `manage-catalog`.
 </execution_context>
 
 <monaiq-agent-handoff>
-This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
-
-If host activation is unavailable, warn exactly: "Monaiq orchestration is degraded in this runtime; I will continue with the compatibility fallback, but journal startup and hard checkpoints still apply."
-
-The compatibility fallback still fetches `monaiq://protocols/implementation-journal`, calls `monaiq_journal get_state` or `monaiq_journal init`, calls `skill_started`, and enforces relevant checkpoints before consequential follow-up actions.
+Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capable variant — `CHECKPOINT-SCENARIO-CHOICE` writes a scenario decision).
 </monaiq-agent-handoff>
 
 <workflow>
-1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `scenario-advisor`.
+1. Run `_shared/workflows/startup.md` for `scenario-advisor`.
 2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before presenting options. Stop before recommendation if scenario building blocks or domain context are unavailable.
 3. Infer application type from `analyze-codebase` capabilities, tech stack, route packet, and conversation evidence before asking the user to choose an app type.
-4. Present a business-readable evidence summary first, then compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and app-type inference rationale.
+4. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus app-type inference rationale.
 5. Present 2-3 scenario options with trade-offs. Keep the recommendation narrow: one preferred option plus alternatives only when they resolve real ambiguity.
 6. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario for pricing design.
-7. Output `selectedScenario` and `appType` for `design-monetization`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, then call `skill_completed`.
+7. Output `selectedScenario` and `appType` for `design-monetization`, coalesce scenario choice, checklist progress, and handoff context into the completion workflow, then call `skill_completed` once.
 </workflow>
 
 <reference>

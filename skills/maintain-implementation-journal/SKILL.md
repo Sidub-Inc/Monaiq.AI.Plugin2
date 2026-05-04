@@ -42,12 +42,12 @@ Provides `.monaiq/STATE.md` as the compact resume/control packet, `.monaiq/JOURN
 </output-context>
 
 <workflow>
-1. Call `monaiq_journal get_state` at the start of each invoking skill.
-2. If state is absent, call `monaiq_journal init`, apply returned file operations locally, and verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist.
-3. Call `skill_started` with no-secret route context before substantive work.
+1. Start from a current journal state packet when the previous Monaiq skill already loaded one in the same turn; otherwise call `monaiq_journal get_state`.
+2. If state is absent or stale, call `monaiq_journal init`, apply returned file operations locally, and verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist.
+3. Call `skill_started` only for a new user-visible journey, stale or missing state recovery, or a materially different specialist handoff that lacks a current state packet.
 4. Use `save_checkpoint` for every `CHECKPOINT-*` prompt/result pair, then apply returned checkpoint file operations and verify the checkpoint file exists.
-5. Use `update_checklist_progress`, `record_file_changes`, `record_validation_failure`, and journal append actions only with evidence-backed, no-secret summaries.
-6. Before handoff or exit, save meaningful completion proof, apply returned operations, verify expected files, then call `skill_completed`.
+5. Use `update_checklist_progress`, `record_file_changes`, `record_validation_failure`, and journal append actions only with evidence-backed, no-secret summaries. Coalesce routine route, decision, changed-path, checklist, and handoff updates into milestone-sized writes.
+6. Before handoff or exit, save meaningful completion proof only when the completion is consequential, apply returned operations, verify expected files, then call `skill_completed` once for the user-visible skill outcome.
 </workflow>
 
 <journal-contract>
@@ -57,9 +57,9 @@ Read `ROUTING-MAP.md` and `maintain-implementation-journal.md` as the first shar
 
 Use `monaiq_journal` as the canonical write path. It returns `fileOperations` for the calling agent to apply locally under the consumer project root. Direct agent writes are not a replacement fallback when the hosted tool is unavailable or stale.
 
-Record skill lifecycle, consequential decisions, todos, blockers, questions, validation failures, checkpoint prompts/results, errors, and code-change summaries. Decisions, todos, blockers, questions, validation failures, and code-change summaries use durable append-only IDs in `JOURNAL.md`. File-change summaries contain paths and intent only, not file contents.
+Record skill lifecycle, consequential decisions, todos, blockers, questions, validation failures, checkpoint prompts/results, errors, and code-change summaries. Decisions, todos, blockers, questions, validation failures, and code-change summaries use durable append-only IDs in `JOURNAL.md`. File-change summaries contain paths and intent only, not file contents. Routine journal writes should be sparse milestone records rather than a tool-call transcript.
 
-Tool envelopes may include `journalReadyUpdates`. Treat them as proposed journal intents, not applied state. Apply supported intents by calling `monaiq_journal` with the specified action and safe summary data, then apply the returned file operations locally after path validation.
+Tool envelopes may include `journalReadyUpdates`. Treat them as proposed journal intents, not applied state. Queue and coalesce supported intents into the next milestone journal update unless an intent records a blocker, validation failure, or hard checkpoint requirement that must be durable before proceeding. Apply the returned file operations locally after path validation.
 </journal-contract>
 
 <master-journey-checklist>
@@ -69,7 +69,7 @@ The journal protocol owns the Monaiq master journey checklist. The three-layer c
 
 Use `monaiq_journal update_checklist_progress` to project checklist progress. The evidence-backed completion rule is strict: mark a gate complete only after the relevant source skill, MCP tool, canonical resources, and checkpoint or journal evidence have been used and recorded. The request must include the gate, status, and evidence summary; completion without evidence is invalid.
 
-Routine checklist and journal updates are background operations. Do not ask the user for permission to initialize .monaiq, record routine progress, append journal entries, or mark evidence-backed checklist progress. User-facing approval remains reserved for hard checkpoints and consequential changes.
+Routine checklist and journal updates are background operations. Do not ask the user for permission to initialize .monaiq, record routine progress, append journal entries, or mark evidence-backed checklist progress. User-facing approval remains reserved for hard checkpoints and consequential changes. Background does not mean frequent: batch routine progress so the journal captures decisions, actions, progress, blockers, and validation outcomes without slowing the workflow.
 </master-journey-checklist>
 
 <operation-application-protocol>
@@ -101,7 +101,7 @@ Do not use checkpointName; the hosted parser reads checkpoint.
 </operation-application-protocol>
 
 <state-detection>
-At Step 1 of every invoking skill, call `monaiq_journal get_state`. If no journal exists, call `monaiq_journal init`, apply the returned file operations, then call `skill_started`.
+At Step 1 of a Monaiq journey or stale resume, call `monaiq_journal get_state`. If no journal exists, call `monaiq_journal init`, apply the returned file operations, then call `skill_started`. If a previous Monaiq skill in the same turn handed off a fresh state packet, reuse it instead of calling `get_state` again.
 
 If state exists, read the bounded resume packet source. `STATE.md` includes current skill/step, scenario, route packet summary, last checkpoint, last activity, open todo/question/blocker/validation status, recent changed areas, and explicit next action. When `currentSkill` is set, summarize the current skill, current step, scenario, route packet summary, last checkpoint, open todos, open questions, validation status, blockers, recent changed areas, next action, and recent activity before continuing.
 </state-detection>
@@ -145,7 +145,7 @@ Do not add Semantic Kernel, Agent Framework, OpenAI, model calls, model-generate
 </file-operation-contract>
 
 <handoff-contract>
-Before a skill exits, call `record_file_changes` with changed paths only, record any unresolved todos or questions, call `save_checkpoint` for `CHECKPOINT-SKILL-COMPLETE` when meaningful, then call `skill_completed`. If routing to another skill, the next skill calls `get_state` and `skill_started`; do not duplicate that specialist skill's protocol or implementation instructions.
+Before a skill exits, record changed paths only when files changed, record unresolved todos or questions, call `save_checkpoint` for `CHECKPOINT-SKILL-COMPLETE` only when meaningful, then call `skill_completed` once. If routing to another skill in the same turn, pass the fresh state and handoff packet so the next skill can avoid redundant `get_state` and `skill_started` calls unless state is stale or the route materially changes.
 
 `CHECKPOINT-SKILL-COMPLETE` should include the no-secret `proofOfDone` packet from `_shared/workflows/completion.md` whenever files, backend state, validation status, or downstream handoff state changed. Persist routePacket, catalogSpec, pricingPlan, sdkConfig, featureImpl, checkoutImpl, and validationProof summaries according to `_shared/handoff-schemas.md` so downstream skills resume from evidence instead of re-asking.
 </handoff-contract>
