@@ -37,6 +37,10 @@ This is a support skill — invoked on-demand by other skills, not part of a lin
 Read-only domain explanation can proceed after resource fetch. If the user asks for follow-up work that changes catalog data, credentials/config, or app behavior, enter the full `monaiq` workflow startup first: fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state` or `monaiq_journal init`, call `skill_started`, and enforce the relevant hard checkpoints before consequential changes.
 </monaiq-agent-handoff>
 
+<execution_context>
+This is a read-only reference skill. Use `_shared/response-patterns.md` and `_shared/protocols.md` for business-readable answers and mutation boundaries. If the user pivots to catalog mutation, credential/config writes, or app behavior changes, enter the full startup/checkpoint flow through the relevant specialist skill.
+</execution_context>
+
 <workflow>
 1. Classify the user's question as entity, relationship, field meaning, namespace/API surface, checkout/credential terminology, or follow-up implementation work.
 2. Fetch only the resources needed: `monaiq://domain/model` for entities/relationships, `monaiq://domain/namespaces` for type locations, and platform API surface only when the question asks for implementation signatures.

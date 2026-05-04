@@ -34,6 +34,10 @@ Provides to design-monetization:
 Discovery chain: analyze-codebase [capabilities] → scenario-advisor [selectedScenario] → design-monetization [pricingPlan]
 </output-context>
 
+<execution_context>
+Before scenario recommendation steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only licensing-scenario recommendation and handoff context; exact prices and catalog mutation belong to `design-monetization` and `manage-catalog`.
+</execution_context>
+
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
 
@@ -44,7 +48,7 @@ The compatibility fallback still fetches `monaiq://protocols/implementation-jour
 
 <workflow>
 1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `scenario-advisor`.
-2. Resolve `monaiq://patterns/scenarios` and `monaiq://domain/model` before presenting options. Stop before recommendation if scenario building blocks or domain context are unavailable.
+2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before presenting options. Stop before recommendation if scenario building blocks or domain context are unavailable.
 3. Infer application type from `analyze-codebase` capabilities, tech stack, route packet, and conversation evidence before asking the user to choose an app type.
 4. Present a business-readable evidence summary first, then compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and app-type inference rationale.
 5. Present 2-3 scenario options with trade-offs. Keep the recommendation narrow: one preferred option plus alternatives only when they resolve real ambiguity.

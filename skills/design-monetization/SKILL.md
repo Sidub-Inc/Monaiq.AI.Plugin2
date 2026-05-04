@@ -37,6 +37,10 @@ Provides to manage-catalog:
 Discovery chain endpoint: design-monetization [pricingPlan] → manage-catalog (creates catalog entities from the plan)
 </output-context>
 
+<execution_context>
+Before monetization strategy steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only catalog-ready pricing strategy and feature-assignment recommendations; catalog mutation belongs to `manage-catalog`.
+</execution_context>
+
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
 

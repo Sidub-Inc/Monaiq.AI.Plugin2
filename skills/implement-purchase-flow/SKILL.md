@@ -26,6 +26,10 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
 </monaiq-agent-handoff>
 
+<execution_context>
+Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only checkout, result handling, credential persistence, post-purchase refresh, and purchase validation decisions.
+</execution_context>
+
 <input-output-contract>
 Input from `implement-licensing` or `manage-catalog`: optional `sdkConfig`, optional `catalogSpec`, route/journal context, and target offering evidence. Direct invocation must verify SDK integration and discover sellable offerings before checkout work.
 
@@ -35,14 +39,22 @@ Output: `checkoutImpl: { architecture: "server-initiated" | "client-only", offer
 <tool-first-authority>
 implement_purchase_flow is authoritative for checkout, credential persistence, post-purchase refresh, and purchase-result handling. Use `implement_purchase_flow` and `fetch_step_resources` as the normal implementation guidance paths before code/config/business-logic changes.
 
+Fetch canonical platform SDK resources before checkout code/config/business-logic edits: `monaiq://platforms/api-surface/{platform}`, `monaiq://platforms/manifest/{platform}`, `monaiq://sdk/{stack}/setup`, `monaiq://config/endpoints`, and `monaiq://docs/anti-patterns/{platform}`. Treat the source skill, `implement_purchase_flow` response, canonical resources, and checkpoint/journal evidence as one required evidence set before checkout edits are allowed or a checklist gate is marked complete.
+
+manual HTTP-client checkout implementation is a plugin guidance defect when SDK/tool guidance exists or should exist. Do not ask the user to approve a hand-rolled `HttpClient`, `fetch`, `axios`, or direct gateway checkout workaround as the normal path.
+
 SDK reverse-engineering is a plugin guidance defect. Do not inspect DLLs. Do not inspect XML documentation. Do not inspect NuGet package caches. Do not inspect generated binaries to discover SDK signatures, checkout request fields, credential persistence semantics, endpoint values, or post-purchase behavior.
 
-If Monaiq tool or resource guidance is missing, contradictory, or insufficient, stop before code/config/business-logic changes and record a plugin guidance defect with monaiq_journal record_error.
+If Monaiq tool or resource guidance is missing, contradictory, or insufficient, stop before code/config/business-logic changes and record a plugin guidance defect with monaiq_journal record_error. Include the missing or contradictory fact/resource, expected SDK/tool authority, affected platform/skill/checklist gate, blocked checklist gate, blocked next action, and a no-secret defect summary. Mark the purchase-flow checklist gate blocked rather than reverse-engineering or hand-rolling checkout.
 </tool-first-authority>
+
+<checkpoint-workflow-directive>
+For `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, and any other hard checkpoint, follow `_shared/workflows/checkpoint.md` exactly. Use `checkpoint` in `monaiq_journal save_checkpoint` payloads, record the user's `result`, apply returned `.monaiq/*` file operations, and verify the checkpoint file exists before purchase-flow edits continue.
+</checkpoint-workflow-directive>
 
 <workflow>
 1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `implement-purchase-flow` or resume through `CHECKPOINT-RESUME`.
-2. Establish prerequisites: SDK integrated, active session, profile credentials available server-side, published offerings available, and resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://config/endpoints`, `monaiq://docs/anti-patterns/{platform}`, `monaiq://domain/model`, and `monaiq://platforms/api-surface/{platform}`. Missing SDK routes to `implement-licensing`; missing offerings route to `manage-catalog`.
+2. Read the master journey checklist from `.monaiq/STATE.md`; this skill owns only the purchase flow when applicable gate. Establish prerequisites: SDK integrated, active session, profile credentials available server-side, published offerings available, and resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://config/endpoints`, `monaiq://docs/anti-patterns/{platform}`, `monaiq://domain/model`, and `monaiq://platforms/api-surface/{platform}`. Missing SDK routes to `implement-licensing`; missing offerings route to `manage-catalog`.
 3. Detect existing checkout implementation and purchase UI entry points before proposing new routes/components.
 4. Use evidence before asking a new question. Infer checkout architecture from existing routes, server/API boundaries, auth/session shape, purchase UI entry points, SDK state, offering facts, credential handling policy, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-CHECKOUT-ARCHITECTURE`, with labeled assumptions for checkout architecture, feature path, credential handling, and next steps. Do not add a new checkpoint name solely for evidence inference.
 5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, selected offerings, architecture, credential persistence policy, and validation plan.
@@ -50,7 +62,7 @@ If Monaiq tool or resource guidance is missing, contradictory, or insufficient, 
 7. Stop at `CHECKPOINT-CHECKOUT-ARCHITECTURE`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, `CHECKPOINT-PRE-CREDENTIAL-PERSISTENCE`, or `CHECKPOINT-PRE-APIKEY-EXPOSURE-RISK` before checkout routes, success handlers, provider behavior, post-purchase refresh, credential persistence, or frontend/API-key exposure decisions. Do not journal ApiKey or EncodedCredential values.
 8. Apply checkout, success, persistence, and UI changes using the authoritative tool/resource guidance only. If guidance is missing, contradictory, or insufficient, stop and record a plugin guidance defect.
 9. Validate checkout session creation, result retrieval, credential storage, state refresh, and feature checks. On checkout/build/validation failure, call `monaiq_journal record_validation_failure` before remediation.
-10. Record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, and call `skill_completed`.
+10. Record changed paths only with `record_file_changes`, then call `update_checklist_progress` for purchase flow when applicable only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. The purchase-flow checklist item cannot be marked complete without SDK/tool evidence: implement_purchase_flow evidence, canonical resource evidence, and checkpoint/journal evidence must all be present. If any evidence is missing, record a blocked checklist gate through the plugin guidance defect path. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned operations, call `skill_completed`, and hand off persisted `checkoutImpl` plus `validationProof`.
 </workflow>
 
 <experience-contract>

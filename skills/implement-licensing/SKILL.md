@@ -26,6 +26,10 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
 </monaiq-agent-handoff>
 
+<execution_context>
+Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only SDK setup, credential strategy, validation, and handoff decisions.
+</execution_context>
+
 <input-output-contract>
 Input from `manage-catalog` or direct invocation: optional `catalogSpec`, optional platform, and route/journal evidence. Direct invocation must detect equivalent platform, SDK, profile, catalog, and journal state before edits.
 
@@ -40,9 +44,13 @@ SDK reverse-engineering is a plugin guidance defect. Do not inspect DLLs. Do not
 If Monaiq tool or resource guidance is missing, contradictory, or insufficient, stop before code/config/business-logic changes and record a plugin guidance defect with monaiq_journal record_error.
 </tool-first-authority>
 
+<checkpoint-workflow-directive>
+For `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, `CHECKPOINT-PRE-CREDENTIAL-WRITE`, and any other hard checkpoint, follow `_shared/workflows/checkpoint.md` exactly. Use `checkpoint` in `monaiq_journal save_checkpoint` payloads, record the user's `result`, apply returned `.monaiq/*` file operations, and verify the checkpoint file exists before code/config work continues.
+</checkpoint-workflow-directive>
+
 <workflow>
 1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `implement-licensing` or resume through `CHECKPOINT-RESUME`.
-2. Establish prerequisites: active session, platform/app context, catalog or target feature context when needed, and canonical resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://platforms/api-surface/{platform}`, `monaiq://config/endpoints`, and `monaiq://docs/anti-patterns/{platform}`. Stop before edits when resource guidance is missing.
+2. Read the master journey checklist from `.monaiq/STATE.md`; this skill owns only the base SDK setup gate. Establish prerequisites: active session, platform/app context, catalog or target feature context when needed, and canonical resources fetched: `monaiq://sdk/{stack}/setup`, `monaiq://platforms/api-surface/{platform}`, `monaiq://config/endpoints`, and `monaiq://docs/anti-patterns/{platform}`. Stop before edits when resource guidance is missing.
 3. Detect current SDK state with resource-backed facts: package manifest, licensing configuration, DI/provider registration, runtime usage, and existing credential storage.
 4. Use evidence before asking a new question. Infer credential handling, checkout architecture impact, feature path dependencies, and next steps from codebase evidence, route packet context, profile/session state, catalog facts, and journal decisions. You must confirm inferred decisions in the next existing checkpoint, especially `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, or `CHECKPOINT-PRE-CREDENTIAL-WRITE`, with labeled assumptions. If the app has user-login evidence, infer user-managed credential persistence from user-login evidence and confirm that decision in CHECKPOINT-CREDENTIAL-SOURCE or CHECKPOINT-PRE-BROWNFIELD-MIGRATION instead of asking a separate credential-scope question.
 5. Present a business-readable evidence summary and business-readable impact before compact technical backing. Technical backing includes codebase evidence, journal decisions, backend/profile/catalog/offering facts, route-packet evidence, labeled assumptions, confidence, missing evidence, and validation plan.
@@ -50,7 +58,7 @@ If Monaiq tool or resource guidance is missing, contradictory, or insufficient, 
 7. Stop at the relevant checkpoint before consequential changes: `CHECKPOINT-FRAMEWORK-CHOICE`, `CHECKPOINT-CREDENTIAL-SOURCE`, `CHECKPOINT-PRE-BROWNFIELD-MIGRATION`, or `CHECKPOINT-PRE-CREDENTIAL-WRITE`. `CHECKPOINT-PRE-CREDENTIAL-WRITE` is mandatory before ApiKeys, IssuerClientId, endpoint URLs, SDK provider configuration, appsettings, user-secrets, `.env`, or persisted Monaiq configuration; record the user's result before proceeding.
 8. Apply package/config/DI/runtime edits using only `implement_base` and fetched resource guidance. Do not store raw ApiKeys, EncodedCredential values, `.env` contents, or user-secrets content in `.monaiq`.
 9. Build and validate. On failure, call `monaiq_journal record_validation_failure` with command, observed result, likely cause, blocked next action, retry choices, and checkpoint requirement before remediation.
-10. Record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned file operations, call `skill_completed`, and hand off `sdkConfig`.
+10. Record changed paths only with `record_file_changes`, then call `update_checklist_progress` for base SDK setup only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned file operations, call `skill_completed`, and hand off persisted `sdkConfig`.
 </workflow>
 
 <reference>

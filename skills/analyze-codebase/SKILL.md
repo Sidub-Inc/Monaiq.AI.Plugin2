@@ -33,6 +33,10 @@ Provides to scenario-advisor:
 Discovery chain: analyze-codebase [capabilities] → scenario-advisor [selectedScenario] → design-monetization [pricingPlan] → manage-catalog
 </output-context>
 
+<execution_context>
+Before discovery steps, follow `_shared/workflows/startup.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. Use `_shared/workflows/checkpoint.md` for `CHECKPOINT-ANALYSIS-SCOPE` or any scope-changing approval. This skill contributes only read-only codebase evidence, capability classification, and downstream discovery handoff.
+</execution_context>
+
 <monaiq-agent-handoff>
 This skill is intended to run under the `monaiq` custom agent. If invoked directly and the host can activate or switch to `monaiq`, hand off the current request and loaded journal state before continuing.
 
@@ -43,7 +47,7 @@ The compatibility fallback still fetches `monaiq://protocols/implementation-jour
 
 <workflow>
 1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `analyze-codebase`.
-2. Resolve `monaiq://patterns/scenarios` and `monaiq://domain/model` before classifying capabilities. Stop before recommendation if taxonomy or domain context is unavailable.
+2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before classifying capabilities. Stop before recommendation if taxonomy or domain context is unavailable.
 3. Determine scan scope from route context, prior journal state, existing conversation analysis, and project structure. Use `CHECKPOINT-ANALYSIS-SCOPE` before broad scans or scope changes.
 4. If products exist, call `product_feature` list and compare catalog features against codebase findings so the output can distinguish existing coverage from gaps.
 5. Scan project configuration and key business-code areas. Keep evidence bounded: file paths, area summaries, observed patterns, and confidence; do not quote secrets or dump full files.
@@ -110,6 +114,7 @@ After presenting findings, suggest: "To map these capabilities to a licensing sc
 - Project config files and key source files were read (not just config)
 - Each identified capability has a suggested FeatureKey, feature type classification, and reasoning
 - Classifications align with `monaiq://patterns/scenarios` feature type taxonomy
+- Findings distinguish existing catalog coverage from codebase gaps when product features are available
 - Findings presented as structured table plus narrative summary
 - `scenario-advisor` suggested as next step
 </success_criteria>

@@ -30,9 +30,17 @@ If host activation is unavailable, warn exactly: "Monaiq orchestration is degrad
 The compatibility fallback still uses `monaiq_journal` for startup, checkpoints, `record_file_changes`, and `skill_completed`.
 </monaiq-agent-handoff>
 
+<execution_context>
+Before domain workflow steps, follow `_shared/workflows/startup.md`, `_shared/workflows/checkpoint.md`, `_shared/workflows/completion.md`, `_shared/workflows/validation.md`, `_shared/response-patterns.md`, `_shared/gate-prompts.md`, `_shared/handoff-schemas.md`, and `_shared/protocols.md`. This skill contributes only failure diagnosis, remediation options, and validation proof decisions.
+</execution_context>
+
 <objective>
 Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from available context (error messages, code, configuration), then fall back to interactive diagnostic questions if the category or resolution can't be determined autonomously. Reference the troubleshooting resource as the diagnostic knowledge source.
 </objective>
+
+<checkpoint-workflow-directive>
+For `CHECKPOINT-APPLY-FIX`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, validation-remediation checkpoints, and any other hard checkpoint, follow `_shared/workflows/checkpoint.md` exactly. Use `checkpoint` in `monaiq_journal save_checkpoint` payloads, record the user's `result`, apply returned `.monaiq/*` file operations, and verify the checkpoint file exists before fixes continue.
+</checkpoint-workflow-directive>
 
 <workflow>
 1. Fetch `monaiq://protocols/implementation-journal`, call `monaiq_journal get_state`, initialize/apply returned `.monaiq/*` operations if needed, then call `skill_started` for `troubleshoot-integration`.
@@ -43,7 +51,7 @@ Diagnose and resolve Monaiq SDK integration issues. Self-diagnose first from ava
 6. Follow the troubleshooting decision tree to form a likely root cause and proposed fix. If missing SDK/catalog/offering/profile/code evidence prevents a confident remediation recommendation, route to the appropriate prerequisite step before code/config/business-logic changes.
 7. Gate fixes: read-only diagnostic recommendations use `CHECKPOINT-APPLY-FIX`; behavior-changing fixes use `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`. Record the user's result before edits.
 8. Apply the smallest targeted fix, then verify with the relevant build, runtime, checkout, credential, or feature-check command. After validation failures, call `monaiq_journal record_validation_failure` with the observed error, validation command/result, likely cause, blocked next action, retry choices, and checkpoint requirement before further edits; use a failure-specific checkpoint before continuing remediation.
-9. Record `record_error` when useful, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` when useful, apply returned operations, then call `skill_completed`.
+9. Record `record_error` when useful, record changed paths only with `record_file_changes`, save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` when useful, apply returned operations, then call `skill_completed` and hand off persisted `validationProof`.
 </workflow>
 
 <reference>

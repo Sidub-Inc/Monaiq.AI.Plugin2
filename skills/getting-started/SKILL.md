@@ -25,6 +25,9 @@ Executable Monaiq workflow protocol. Direct skill invocation is first-class; the
 <required_reading>
 - `ROUTING-MAP.md` for the shared route/checkpoint contract, route packet vocabulary, specialist phase boundaries, and direct invocation fallback.
 - `maintain-implementation-journal.md` for journal file operation application, checkpoint anatomy, and approval-result recording.
+- `_shared/workflows/startup.md` for readiness checks, journal startup, resume behavior, and user-visible blocker reports.
+- `_shared/response-patterns.md` and `_shared/handoff-schemas.md` for status summaries and route packet persistence.
+- `_shared/protocols.md` for read-only versus mutation tool-operation rules.
 - `monaiq://protocols/implementation-journal` through `fetch_step_resources` before journal startup or resume decisions.
 </required_reading>
 
@@ -41,19 +44,27 @@ The compatibility fallback still uses the same direct-invocation contract above:
 </monaiq-agent-handoff>
 
 <process_steps>
-1. Fetch `monaiq://protocols/implementation-journal` and read the shared route/checkpoint contract.
+1. Fetch `monaiq://protocols/implementation-journal` and read the shared route/checkpoint contract plus `_shared/workflows/startup.md`.
 2. Call `monaiq_journal get_state`; when no state exists, call `monaiq_journal init` and apply returned `.monaiq/*` file operations under the consumer project root.
-3. Verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist when the returned operations indicate they should.
+3. Verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist when the returned operations indicate they should. Verify the master journey checklist is present in `.monaiq/STATE.md`; if it is absent, use `monaiq_journal init` or `update_checklist_progress` from `monaiq://protocols/implementation-journal` to restore the compact resume/control packet before routing.
 4. Call `monaiq_journal skill_started` for `getting-started` unless resuming from a fresh state packet.
 5. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, intended outcome, and any inferred assumptions; continue only after recording the approval result.
-6. Inspect profile, catalog, code, and journal evidence before asking detailed questions.
-7. Emit one route packet with the exact shared fields and hand off to the narrowest specialist skill.
+6. Inspect profile, catalog, code, journal evidence, and master journey checklist gates before asking detailed questions.
+7. Emit one route packet with the exact shared fields and hand off to the narrowest missing prerequisite or specialist skill.
 </process_steps>
+
+<resume-mode>
+When `.monaiq/STATE.md` exists, enter Resume Mode before new intake. Render a Status Summary using `_shared/response-patterns.md`: current gate, last checkpoint, open blockers/questions, backend summary (profile, products, offerings, SDK), and one primary next skill recommendation. Only present 1-2 alternatives when the route is genuinely ambiguous. Do not re-ask questions already answered by the route packet, journal evidence, or backend facts.
+</resume-mode>
+
+<readiness-blocker-report>
+If `fetch_step_resources`, `monaiq_journal`, or a required MCP tool is unavailable, render a user-visible READINESS BLOCKER report with: missing capability, affected skill/gate, what can continue, what is blocked, recovery action, and no-secret diagnostic summary. Continue only with read-only recommendations or domain explanation; block catalog mutation, credential/config writes, application behavior edits, checkpoint recording, and validation remediation until readiness is restored.
+</readiness-blocker-report>
 
 <anti_patterns>
 - Do not treat direct skill invocation as a lower-quality path.
 - Do not skip `monaiq_journal get_state`, `monaiq_journal init`, returned operation application, `skill_started`, or hard checkpoints because the custom agent is unavailable.
-- Do not perform substantive catalog, SDK, feature, purchase, or troubleshooting work inside this intake/router skill.
+- This intake/router skill must not perform substantive catalog, SDK, feature, purchase, or troubleshooting work itself.
 - Do not ask low-value questions when existing code, journal, profile, or catalog evidence supports an inference that can be confirmed in the next checkpoint.
 </anti_patterns>
 
@@ -205,6 +216,8 @@ If none of the above scenarios apply cleanly, or if the user expresses a specifi
 | "View my profile or credentials" | `profile-onboarding` | Profile, credentials, and terms review | |
 
 Annotate each row with the user's current progress where applicable (e.g., "✓ 2 products created" or "— not started"). If the user's intent is unclear, summarize the available paths and ask which direction they'd like to go.
+
+Use the Intent Dispatch Table in `ROUTING-MAP.md` before showing this fallback. The dispatch step matches intent, confirms only genuinely ambiguous routes with one short question, then hands off rather than doing specialist work inline.
 
 </reference>
 
