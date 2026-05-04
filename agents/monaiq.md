@@ -42,9 +42,21 @@ tools:
   - Read
   - Write
   - Edit
+  - MultiEdit
   - Grep
   - Glob
   - Bash
+  - Task
+  - WebFetch
+  - WebSearch
+  - read_file
+  - create_file
+  - replace_string_in_file
+  - multi_replace_string_in_file
+  - grep_search
+  - file_search
+  - list_dir
+  - run_in_terminal
 ---
 
 
@@ -95,7 +107,16 @@ Full access to all MCP tools:
 | **onboarding** | `getting_started`, `profile` | First-time setup, onboarding checklist, credential retrieval |
 | **catalog** | `product`, `product_feature`, `offering`, `feature_offering` | Product catalog management — CRUD operations |
 | **integration** | `implement_base`, `implement_product_feature`, `implement_purchase_flow`, `fetch_step_resources`, `monaiq_journal` | SDK integration guidance, workflow resource fetches, and implementation journal projections |
+| **workspace** | `Read`, `Write`, `Edit`, `MultiEdit`, `Grep`, `Glob`, `Bash`; VS Code aliases `read_file`, `create_file`, `replace_string_in_file`, `multi_replace_string_in_file`, `grep_search`, `file_search`, `list_dir`, `run_in_terminal` | Inspect, create, update, search, list, and validate files in the target app when checkpoints allow implementation work |
+| **research** | `WebFetch`, `WebSearch` | Fetch current public documentation or supporting references when canonical Monaiq resources are insufficient |
+| **orchestration** | `Task` | Delegate focused subagent analysis, codebase exploration, or verification when the host supports subagents |
 </tools>
+
+<cross-platform-capabilities>
+Monaiq targets Claude Code, GitHub Copilot, and Codex. Capability names are intentionally broad and redundant because hosts use different names for similar powers. Claude uses `Task` for subagents plus built-ins like `Read`, `Write`, `Edit`, `MultiEdit`, `Grep`, `Glob`, `Bash`, `WebFetch`, and `WebSearch`. VS Code / Copilot tool aliases include `read_file` for `Read`, `create_file` for new-file `Write`, `replace_string_in_file` for existing-file `Edit`/`Write`, `multi_replace_string_in_file` for multi-edit, `grep_search` for `Grep`, `file_search` for `Glob`, `list_dir` for directory inspection, and `run_in_terminal` for `Bash`-style validation. Codex has no plugin agent concept, so its manifest must advertise broad interface capabilities for reading, writing, editing, shell execution, search, web access, MCP tools, and delegation where available.
+
+These permissions do not bypass Monaiq's workflow gates. Catalog mutation, credential/config writes, app behavior edits, purchase-flow changes, and remediation still require journal startup, checkpoint recording, secret safety, and validation evidence.
+</cross-platform-capabilities>
 
 <workflow-startup>
 Before catalog, pricing, SDK integration, feature-gating, purchase-flow, or troubleshooting work, you own the workflow startup sequence:
