@@ -58,20 +58,26 @@ For `CHECKPOINT-PRE-CATALOG-MUTATION`, `CHECKPOINT-PRE-PUBLISH-OFFERING`, and an
 
 ## New Catalog Flow
 
-### Interaction 1: "What features does your product have?"
+### Interaction 1: Inferred product and features (recommendation, not open question)
 
-Ask the user to describe their product and its capabilities in plain language.
+This step follows the Evidence-First Recommendation Principle in `_shared/protocols.md`. Do not open with "what features does your product have?" — derive a recommendation first.
 
-If `quickStartSpec.appDescription` was provided from getting-started, use it instead of asking.
+Default path (in order):
 
-From the user's description, infer:
-- **Product**: name and code (derive code from name, e.g., "My Cool App" → `my-cool-app`)
-- **Features**: map described capabilities to feature types:
-  - Binary on/off capabilities → feature flags (called `ProductAccessFeature` in Monaiq)
-  - Usage-counted capabilities → usage limits (called `ProductRateLimitFeature` in Monaiq)
-  - Generate a feature key for each: lowercase-hyphenated from capability name (e.g., "Premium Dashboard" → `premium-dashboard`)
+1. Use upstream evidence in this order: `quickStartSpec.appDescription`, `analyze-codebase` capabilities (route packet or journal), `scenario-advisor.selectedScenario`, prior journal `discoveredCapabilities`, then conversation context.
+2. If a codebase is reachable AND no analysis evidence exists, route to `analyze-codebase` first; resume here with its output. Do not ask the user to describe their app while a code-derived analysis is available or obtainable.
+3. From the available evidence, infer:
+   - **Product**: name and code (derive code from name, e.g., "My Cool App" → `my-cool-app`)
+   - **Features**: map detected capabilities to feature types:
+     - Binary on/off capabilities → feature flags (called `ProductAccessFeature` in Monaiq)
+     - Usage-counted capabilities → usage limits (called `ProductRateLimitFeature` in Monaiq)
+     - Generate a feature key for each: lowercase-hyphenated from capability name (e.g., "Premium Dashboard" → `premium-dashboard`)
+4. Present the inferred product and feature structure with evidence backing — list the source signals (file paths, route packet fields, journal entries) that drove each suggestion. Mark this as the recommendation and invite refinement (add/remove/rename) rather than asking the user to compose features from scratch.
+5. Use `CHECKPOINT-PRE-CATALOG-MUTATION` to confirm the inferred structure before any `product` / `product_feature` create call.
 
-Present the inferred structure to the user for confirmation before creating.
+If the user defers ("you decide", "figure it out"), apply the recommendation, record the deferral and rationale in the journal, and proceed to Interaction 2.
+
+Evidence-gap fallback (only when no upstream evidence and no codebase access): ask the **narrowest** product-shape question (typically a one-line description of what the product does and who uses it) and frame it explicitly as an evidence gap. Do not ask the user to enumerate features — derive them after they describe the product.
 
 [CONFIRM] Execute tool calls: `product` (create) → `product_feature` (create for each feature).
 

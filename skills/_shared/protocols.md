@@ -37,6 +37,42 @@ Business-readable output comes first. Compact technical backing follows with rou
 
 Route, handoff, journal, and checkpoint payloads must stay secret-free. Record `session established`, credential source status, redacted placeholders, and package/version facts; never record raw ApiKeys, EncodedCredential values, JWTs, Stripe keys, `.env` contents, user-secrets contents, or encoded credential fragments.
 
+## Evidence-First Recommendation Principle
+
+Monaiq is positioned as a guided, evidence-based licensing assistant. Skills must research and recommend before they ask. This principle is binding for every strategic decision (which features to monetize, which licensing model fits the app, which pricing tiers to propose, which application type applies) and is referenced by name from individual skills.
+
+**Rule.** Before asking the user any open-ended strategic question, a skill MUST first attempt to derive a concrete recommendation from available evidence. The skill then presents the user with a short, business-readable recommendation, 2–3 ranked options with rationale, a clearly marked recommended choice, and confirms via the existing checkpoint that owns the decision. Open-ended discovery questions are reserved for ambiguity that evidence cannot resolve (for example, the user's pricing intent, their commercial strategy, or constraints the agent cannot observe).
+
+**Evidence order (consult in this order before any open question).**
+
+1. Upstream route-packet inputs handed off by the previous skill (`selectedScenario`, `capabilities`, `appType`, `quickStartSpec`, `catalogSpec`, etc.).
+2. Codebase evidence — invoke `analyze-codebase` (or reuse a prior analysis from the journal/route packet) when the user has a reachable codebase. Use detected tech stack, capabilities, integrations, and configuration as primary signal.
+3. Journal evidence — `monaiq_journal` decisions, prior recommendations, prior checkpoints, prior validation outcomes.
+4. Catalog/profile state — `product`, `product_feature`, `offering`, `feature_offering`, `profile` reads.
+5. Conversation evidence captured in the route packet's `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, and `recommendationRationale`.
+6. Resource patterns — `monaiq://patterns/*`, `monaiq://domain/*`, `monaiq://platforms/*`.
+
+Only when all relevant sources are exhausted, ask the **narrowest** possible question, framed explicitly as an evidence gap rather than as the default discovery path.
+
+**Required response shape for any strategic recommendation.**
+
+- Evidence summary (one or two lines: what was inferred and from where).
+- 2–3 options as a short table or bullets, each with trade-offs.
+- One option marked as the recommendation, with the reasoning tied to the evidence summary.
+- A confirmation prompt that maps to the owning checkpoint (e.g., `CHECKPOINT-SCENARIO-CHOICE`, `CHECKPOINT-PRICING-APPROVAL`, `CHECKPOINT-PRE-CATALOG-MUTATION`) — not an open-ended question.
+- Anti-pattern phrases to avoid as defaults: *"What features does your app/product have?"*, *"What licensing model do you want?"*, *"Which monetization approach should we use?"*, *"You decide which features to monetize."* These are permitted only after the evidence path has been attempted and explicitly judged insufficient, and even then must be the narrowest possible question.
+
+**Anti-patterns.**
+
+- Asking the user to choose what to monetize, which model to use, or which tiers to define before running `analyze-codebase` (when a codebase exists), reading the journal, or pulling existing catalog state.
+- Presenting a flat menu of options with no recommendation and no rationale.
+- Treating an unanswered upstream input as a reason to ask the user instead of invoking the upstream skill that produces it.
+- Re-asking decisions already captured in the journal or route packet.
+
+**When the user explicitly defers ("you decide", "figure it out").** Treat this as authorization to apply the recommended option. Continue under the recommendation, record the deferral and rationale in the journal, and surface the final choice at the owning checkpoint for confirmation. Do not bounce the question back as a follow-up — that is the failure mode this principle exists to prevent.
+
+See `_shared/response-patterns.md` "Evidence Backing" for the canonical compact technical-backing shape, and the `Tool Operation Rules` below for the read-first tool ordering each skill must respect.
+
 ## Tool Operation Rules
 
 - `design-monetization`: read/list catalog facts only. Do not create, update, publish, or delete products, features, offerings, or feature assignments.

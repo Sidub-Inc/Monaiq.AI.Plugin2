@@ -48,11 +48,11 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 <workflow>
 1. Run `_shared/workflows/startup.md` for `design-monetization`.
 2. Resolve `monaiq://patterns/pricing` and `monaiq://domain/model` before proposing tiers. Stop before pricing recommendations if pricing or entity context is unavailable.
-3. Gather inputs from `selectedScenario`, capability evidence, route packet, journal decisions, and existing offerings. If upstream context is missing, ask only the narrowest strategic question needed to choose a pricing direction.
+3. Apply the Evidence-First Recommendation Principle in `_shared/protocols.md`. Gather inputs in this order: `selectedScenario` from `scenario-advisor`, capability evidence from `analyze-codebase`, route packet, journal decisions, existing offerings. If a codebase is reachable but no analysis exists, route to `analyze-codebase` first rather than asking the user. Only after the evidence path is exhausted may you ask a single, narrowest strategic question — framed explicitly as an evidence gap (typically a commercial intent the agent cannot observe), never as the default discovery path.
 4. Call `offering` list when catalog context is available, then treat existing offerings as evidence for refinement rather than overwriting them.
-5. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus pricing-pattern rationale.
-6. Propose a complete tier structure up front using fetched pricing patterns, then refine through user feedback.
-7. Use `CHECKPOINT-PRICING-APPROVAL` before treating pricing, tier, or feature-assignment strategy as approved for catalog creation.
+5. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus pricing-pattern rationale. Mark one tier structure as the recommendation and present 1–2 alternatives only when they resolve real ambiguity in the evidence.
+6. Propose a complete tier structure up front using fetched pricing patterns, then refine through user feedback. Do not present a flat menu and ask the user to choose without a recommendation.
+7. Use `CHECKPOINT-PRICING-APPROVAL` before treating pricing, tier, or feature-assignment strategy as approved for catalog creation. If the user defers ("you decide"), apply the recommendation, record the deferral and rationale in the journal, and surface the final choice at this checkpoint.
 8. Output a catalog-ready `pricingPlan` for `manage-catalog`, coalesce pricing decisions, checklist progress, and handoff context into the completion workflow, then call `skill_completed` once.
 </workflow>
 

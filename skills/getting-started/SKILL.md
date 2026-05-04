@@ -174,20 +174,37 @@ Present two options:
 
 **Available only for Greenfield scenario (Scenario A).**
 
+Quick Start follows the Evidence-First Recommendation Principle in `_shared/protocols.md`: research the codebase, recommend a feature set, then confirm — do not ask the user to design their own monetization upfront.
+
 Collapse the full onboarding journey to 2 user interactions with smart defaults:
 
-**Interaction 1: "What features does your app have?"**
-- Ask the user to describe their app's capabilities in plain language.
-- Map the user's description to features using the glossary:
-  - Binary capabilities → ProductAccessFeature (e.g., "premium dashboard" → FeatureKey: `premium-dashboard`)
-  - Metered capabilities → ProductRateLimitFeature (e.g., "API calls" → FeatureKey: `api-calls`)
+**Interaction 1 — Inferred features (recommendation, not open question)**
 
-**Interaction 2: "How do you want to charge?"**
-- Present options:
-  - **Free trial + paid subscription** — 14-day Trial offering (all features Allowed) + Monthly Subscription offering
-  - **One-time purchase** — Perpetual offering (all features Allowed)
-  - **Usage-based** — Subscription offering with RateLimit features metered
-- Map the user's choice to an offering structure with smart defaults.
+Default path:
+
+1. If a reachable codebase is present, route to `analyze-codebase` (or reuse a prior analysis recorded in the route packet/journal) to derive licensable capabilities, tech stack, and integration points. Do not ask the user to describe what their app does before this analysis runs.
+2. Map detected capabilities to feature types using the glossary:
+   - Binary capabilities → `ProductAccessFeature` (e.g., "premium dashboard" → FeatureKey: `premium-dashboard`)
+   - Metered capabilities → `ProductRateLimitFeature` (e.g., "API calls" → FeatureKey: `api-calls`)
+3. Present the recommended feature set with evidence backing — what was found, where, and why each capability is licensable. Mark the recommended set explicitly and invite refinement (add/remove/rename) rather than asking the user to start from scratch.
+4. Confirm via the existing `manage-catalog` checkpoint (`CHECKPOINT-PRE-CATALOG-MUTATION`); the user's confirmation, deferral, or refinement is recorded in the journal.
+
+Evidence-gap fallback (only when no codebase is reachable AND upstream context is missing): ask the **narrowest** possible question — a one-line description of the product — and frame it explicitly as an evidence gap, not as the default Quick Start step. Do not ask "what features should we monetize"; ask only what evidence cannot supply.
+
+If the user defers ("you decide", "figure it out", "pick the best option"), apply the recommendation, record the deferral and rationale in the journal, and proceed to Interaction 2. Do not return the question to the user.
+
+**Interaction 2 — Inferred pricing model (recommendation, not menu)**
+
+Default path:
+
+1. Use the inferred capability mix, app type, and (when available) `scenario-advisor` / `design-monetization` evidence to recommend one pricing model, with one or two alternatives shown for context.
+2. Present the recommendation with rationale tied to the codebase evidence and the application archetype:
+   - **Free trial + paid subscription** — 14-day Trial offering (all features Allowed) + Monthly Subscription offering
+   - **One-time purchase** — Perpetual offering (all features Allowed)
+   - **Usage-based** — Subscription offering with RateLimit features metered
+3. Confirm via the owning checkpoint (`CHECKPOINT-PRICING-APPROVAL` when handing off to `design-monetization`, or `CHECKPOINT-PRE-CATALOG-MUTATION` when applying defaults inline).
+
+Evidence-gap fallback: only ask "how do you want to charge?" when the inferred model would be ambiguous (e.g., the codebase exposes both gated features and metered surfaces equally and the user has not stated a commercial preference). Frame as a clarifying question, not the default.
 
 After both interactions, route to `manage-catalog` with the pre-filled context (product name, features, offering structure) so the catalog can be created with minimal additional input.
 

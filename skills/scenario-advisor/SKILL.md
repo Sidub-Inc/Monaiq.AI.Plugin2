@@ -45,10 +45,10 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 <workflow>
 1. Run `_shared/workflows/startup.md` for `scenario-advisor`.
 2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before presenting options. Stop before recommendation if scenario building blocks or domain context are unavailable.
-3. Infer application type from `analyze-codebase` capabilities, tech stack, route packet, and conversation evidence before asking the user to choose an app type.
+3. Apply the Evidence-First Recommendation Principle in `_shared/protocols.md`. Infer application type from `analyze-codebase` capabilities, tech stack, route packet, and conversation evidence. If a codebase is reachable but no analysis evidence exists, route to `analyze-codebase` first rather than asking the user to pick an app type.
 4. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus app-type inference rationale.
-5. Present 2-3 scenario options with trade-offs. Keep the recommendation narrow: one preferred option plus alternatives only when they resolve real ambiguity.
-6. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario for pricing design.
+5. Present 2–3 scenario options with trade-offs and explicitly mark one as the recommendation tied to the evidence summary. Do not present a flat menu without a recommendation; alternatives appear only when they resolve real ambiguity.
+6. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario for pricing design. If the user defers ("you decide"), apply the recommended scenario, record the deferral and rationale in the journal, and surface the final choice at this checkpoint — do not return the question to the user.
 7. Output `selectedScenario` and `appType` for `design-monetization`, coalesce scenario choice, checklist progress, and handoff context into the completion workflow, then call `skill_completed` once.
 </workflow>
 
@@ -69,7 +69,7 @@ Infer the application type from available context:
 - **CLI tool** — Console app, command parsers, argument handling
 - **API service** — REST/GraphQL endpoints, auth middleware, rate limiting
 
-If `analyze-codebase` was run previously, use its output (tech stack, identified capabilities) to infer the type. If insufficient context to infer, present the application type list and ask the user to select.
+If `analyze-codebase` was run previously, use its output (tech stack, identified capabilities) to infer the type. If a codebase is reachable but no analysis evidence exists, route to `analyze-codebase` first rather than asking the user to pick. Only when no codebase is reachable AND no upstream evidence is available, present the application-type list — framed explicitly as an evidence gap — and ask the user to confirm.
 
 ## Present Licensing Model Options
 
@@ -87,7 +87,7 @@ Reference specific building blocks from `monaiq://patterns/scenarios` by name �
 
 ## Capture User Selection
 
-Let the user review the options, ask questions, and select a licensing model. Record the chosen scenario.
+Present the options with one clearly marked as the recommendation, tied to the evidence summary (codebase capabilities, tech stack, app archetype, prior journal decisions). Use `CHECKPOINT-SCENARIO-CHOICE` to confirm — this is a confirmation prompt, not an open menu. Record the chosen scenario, including any deferral ("you decide") under which the recommendation was applied, in the journal.
 
 ## Route to Design
 
