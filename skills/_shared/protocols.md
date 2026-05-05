@@ -112,6 +112,64 @@ If evidence is thin, the recommendation IS *"scope down — let me run `analyze-
 
 **Platform-agnostic source.** Skills must not embed framework-specific code, package names, or API surface (e.g., React `featureId` vs .NET `FeatureKey`). Per-stack guidance is owned by `monaiq://sdk/{stack}/setup` resources and the implement-* tools' server-side responses. SDK changes update those; plugin source stays stable.
 
+## File Operation Application Protocol
+
+When a `monaiq_journal` call returns a `fileOperations` array, the calling agent MUST apply every operation before continuing. This is the single authoritative definition; skills reference it by name instead of restating it.
+
+1. Receive the `fileOperations` array from the `monaiq_journal` tool response.
+2. For each operation in the array, in order:
+   - If `type == "ensureDirectory"`: ensure the directory at `path` exists — create it if it does not exist.
+   - If `type == "writeFile"`: create or overwrite the file at `path` with the value of `content`.
+   - If `type == "appendFile"`: append the value of `content` to the file at `path`, creating it if absent.
+3. After applying all operations, verify each `writeFile` path exists on disk.
+4. If any write cannot be confirmed, report the failure immediately and do not continue the skill workflow.
+
+Validate every path against the `.monaiq` allowlist before applying: `.monaiq/`, `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, `.monaiq/config.json`, `.monaiq/CHECKPOINTS`, and `.monaiq/CHECKPOINTS/*.md`. Reject operations that target paths outside this allowlist.
+
+## Host-Native Ask Pattern
+
+When a skill step requires a blocking user decision, use the target host's native ask mechanism. This section is the authoritative call-syntax reference; `checkpoint.md` and skill workflow steps reference it by name. Skills use `host-native question` as the canonical term in workflow prose; host-specific call syntax appears only here and in `checkpoint.md`.
+
+**VS Code / GitHub Copilot** — call `vscode_askQuestions`:
+
+```json
+vscode_askQuestions([{
+  "header": "Monaiq — [GATE-NAME]",
+  "question": "[Question text shown to the user]",
+  "options": [
+    { "label": "[Option A — recommended]", "value": "option-a", "recommended": true },
+    { "label": "[Option B]", "value": "option-b" },
+    { "label": "Pause — show me [source]", "value": "pause" }
+  ]
+}])
+```
+
+**Claude / Claude Code** — call `AskUserQuestion` with the same shape:
+
+```json
+AskUserQuestion([{
+  "header": "Monaiq — [GATE-NAME]",
+  "question": "[Question text shown to the user]",
+  "options": [
+    { "label": "[Option A — recommended]", "value": "option-a", "recommended": true },
+    { "label": "[Option B]", "value": "option-b" },
+    { "label": "Pause — show me [source]", "value": "pause" }
+  ]
+}])
+```
+
+**Codex / headless runtimes** — present a numbered list in chat; require a numeric reply before proceeding:
+
+```
+1. [Option A — recommended]
+2. [Option B]
+3. Pause — show me [source]
+
+Reply with a number (e.g., "1") to continue.
+```
+
+Do not continue the skill workflow until the user's answer is received. Do not infer approval from conversational text.
+
 ## Tool Operation Rules
 
 - `design-monetization`: read/list catalog facts only. Do not create, update, publish, or delete products, features, offerings, or feature assignments.

@@ -22,7 +22,7 @@ Use these lightweight shapes for user-facing Monaiq output. Keep business meanin
 - **Entities/files:** affected products, features, offerings, files, or credential stores.
 - **Risks:** secret exposure, migration, checkout, entitlement, or validation risk.
 - **Validation:** how success will be proven.
-- **Options:** approve, revise, or stop.
+- **Options:** present via the **Host-Native Ask Pattern** in `_shared/protocols.md`. Standard checkpoint options: `approve automatic implementation`, `show a reviewable plan first`, `revise scope`, `stop`.
 
 ## Completion Summary
 

@@ -10,6 +10,15 @@ Before a skill exits or hands off to another skill, record only meaningful compl
 6. Apply returned file operations locally and verify expected `.monaiq` files after each journal action that returns file operations.
 7. Call `monaiq_journal skill_completed` once per user-visible skill outcome, not after every internal tool step.
 8. Recommend the next specialist skill or stop with unresolved risks.
+9. **Next Step Signal (mandatory):** emit as the final line of every completion output:
+
+   > **Next:** Invoke `[skill-name]` — [one sentence describing what it does for the user's journey].
+
+   If no next skill applies because unresolved risks block continuation, emit instead:
+
+   > **Next:** Resolve [blocker description] before continuing.
+
+   Every skill completion path must produce exactly one Next Step Signal. Omitting it is not permitted.
 
 Routine completion records should be sparse. A typical successful implementation skill has startup/resume, one or more hard checkpoint result writes, validation failure writes only if needed, and one completion/progress batch. Avoid separate back-to-back journal calls for file changes, checklist progress, completion checkpoint, and lifecycle when the same milestone can be represented more compactly without losing required evidence.
 

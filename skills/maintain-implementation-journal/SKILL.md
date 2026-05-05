@@ -43,9 +43,9 @@ Provides `.monaiq/STATE.md` as the compact resume/control packet, `.monaiq/JOURN
 
 <workflow>
 1. Start from a current journal state packet when the previous Monaiq skill already loaded one in the same turn; otherwise call `monaiq_journal get_state`.
-2. If state is absent or stale, call `monaiq_journal init`, apply returned file operations locally, and verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist.
+2. If state is absent or stale, call `monaiq_journal init` and apply returned file operations using the **File Operation Application Protocol** in `_shared/protocols.md`. Verify that `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` all exist after application; if any are missing, report the failure before continuing.
 3. Call `skill_started` only for a new user-visible journey, stale or missing state recovery, or a materially different specialist handoff that lacks a current state packet.
-4. Use `save_checkpoint` for every `CHECKPOINT-*` prompt/result pair, then apply returned checkpoint file operations and verify the checkpoint file exists.
+4. Use `save_checkpoint` for every `CHECKPOINT-*` prompt/result pair, then apply returned file operations using the **File Operation Application Protocol** in `_shared/protocols.md`. Verify the expected `.monaiq/CHECKPOINTS/*.md` file exists before claiming the checkpoint is recorded.
 5. Use `update_checklist_progress`, `record_file_changes`, `record_validation_failure`, and journal append actions only with evidence-backed, no-secret summaries. Coalesce routine route, decision, changed-path, checklist, and handoff updates into milestone-sized writes.
 6. Before handoff or exit, save meaningful completion proof only when the completion is consequential, apply returned operations, verify expected files, then call `skill_completed` once for the user-visible skill outcome.
 </workflow>

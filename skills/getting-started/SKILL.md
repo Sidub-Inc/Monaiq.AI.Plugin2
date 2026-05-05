@@ -42,7 +42,9 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 4. Call `monaiq_journal skill_started` for `getting-started` only for a new, stale, or materially changed journey; skip it when resuming from a fresh state packet.
 5. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, `activePlatform`, `targetProject`, `outOfScopePlatforms`, intended outcome, and any inferred assumptions; continue only after recording the approval result.
 6. Inspect profile, catalog, code, journal evidence, and master journey checklist gates before asking detailed questions.
-7. Emit one route packet with the exact shared fields, including `activePlatform`, `targetProject`, and `outOfScopePlatforms`, and hand off to the narrowest missing prerequisite or specialist skill.
+7. Emit one route packet with the exact shared fields, including `activePlatform`, `targetProject`, and `outOfScopePlatforms`, and hand off to the narrowest missing prerequisite or specialist skill. Emit the **Next Step Signal** as defined in `_shared/workflows/completion.md` step 9:
+   - When routing to catalog creation: `**Next:** Invoke \`manage-catalog\` — create your product catalog so the SDK has offerings to enforce.`
+   - When routing to SDK integration: `**Next:** Invoke \`implement-licensing\` — integrate the Monaiq SDK into your application to enforce licensing.`
 </process_steps>
 
 <resume-mode>
@@ -149,6 +151,8 @@ Present two options:
   - If profile is incomplete → route to `profile-onboarding` first
   - Then route to `manage-catalog` to create products, features, and offerings
 
+**Next:** Invoke `manage-catalog` — create your product catalog so the SDK has offerings to enforce.
+
 ### Scenario B — Brownfield (existing code/SDK, incomplete catalog)
 
 **Conditions:** Some products exist BUT missing offerings or feature assignments.
@@ -157,6 +161,7 @@ Present two options:
 - Identify what's missing:
   - Products exist but no offerings → route to `manage-catalog` to create offerings and assign features.
   - Products and offerings exist but SDK not integrated → route to `implement-licensing`.
+    **Next:** Invoke `implement-licensing` — integrate the Monaiq SDK into your application to enforce licensing.
   - Suggest `analyze-codebase` if the user wants to discover additional licensable capabilities.
   - For projects that already have a user/customer/tenant table, route to the `implement-licensing` Brownfield Credential Contract so ownership scope is decided before credential-persistence guidance.
 
