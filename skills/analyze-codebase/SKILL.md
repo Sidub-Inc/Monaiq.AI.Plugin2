@@ -43,7 +43,8 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 
 <workflow>
 1. Run `_shared/workflows/startup.md` for `analyze-codebase`.
-2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before classifying capabilities. Stop before recommendation if taxonomy or domain context is unavailable.
+2. **Response Pattern.** Follow `_shared/protocols.md` § Response Pattern. The gate this skill owns is **codebase-evidence emission**. Evidence sources, in priority order: detected project files (csproj/package.json/manifests), business-code areas matching scenario taxonomy, existing `product_feature` list when catalog exists, prior journal analyses, `monaiq://patterns/scenarios`, `monaiq://platforms/api-surface/{platform}`. The recommendation is the classified capability list with FeatureKey suggestions, not a question about which capabilities to include.
+3. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before classifying capabilities. Stop before recommendation if taxonomy or domain context is unavailable.
 3. Determine scan scope from route context, prior journal state, existing conversation analysis, and project structure. Use `CHECKPOINT-ANALYSIS-SCOPE` before broad scans or scope changes.
 4. If products exist, call `product_feature` list and compare catalog features against codebase findings so the output can distinguish existing coverage from gaps.
 5. Scan project configuration and key business-code areas. Keep evidence bounded: file paths, area summaries, observed patterns, and confidence; do not quote secrets or dump full files.

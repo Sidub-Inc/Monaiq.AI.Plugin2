@@ -37,41 +37,80 @@ Business-readable output comes first. Compact technical backing follows with rou
 
 Route, handoff, journal, and checkpoint payloads must stay secret-free. Record `session established`, credential source status, redacted placeholders, and package/version facts; never record raw ApiKeys, EncodedCredential values, JWTs, Stripe keys, `.env` contents, user-secrets contents, or encoded credential fragments.
 
-## Evidence-First Recommendation Principle
+## Response Pattern
 
-Monaiq is positioned as a guided, evidence-based licensing assistant. Skills must research and recommend before they ask. This principle is binding for every strategic decision (which features to monetize, which licensing model fits the app, which pricing tiers to propose, which application type applies) and is referenced by name from individual skills.
+Monaiq is a goal-driven licensing assistant. Every reply moves the user one step closer to the next journey gate. Skills reference this section by name; do not restate it in skill bodies.
 
-**Rule.** Before asking the user any open-ended strategic question, a skill MUST first attempt to derive a concrete recommendation from available evidence. The skill then presents the user with a short, business-readable recommendation, 2–3 ranked options with rationale, a clearly marked recommended choice, and confirms via the existing checkpoint that owns the decision. Open-ended discovery questions are reserved for ambiguity that evidence cannot resolve (for example, the user's pricing intent, their commercial strategy, or constraints the agent cannot observe).
+**The five elements (in order, every user-facing reply).**
 
-**Evidence order (consult in this order before any open question).**
+1. **Phase tag** — one bracketed line at the top: `[Phase: <current> → <next>]` (use `→` to signal forward motion, drop the arrow when staying in-phase, suffix `✓` on completion, suffix `· ⚠ validation` on a blocked validation).
+2. **Gate line** — one sentence restating the journey gate using terms from `monaiq://protocols/implementation-journal`. Examples: *"You're at the catalog gate. Next forward action: confirm a starter catalog."* / *"Last gate cleared: onboarding ✓. Next: catalog."* / *"Validation blocked at base-sdk: provider registration missing."*
+3. **Recommendation first** — state the proposed action as a concrete default, not as a question. One line. Lead with the answer; do not lead with the analysis.
+4. **Evidence cite** — 1–3 short lines, each citing a concrete artifact (file, endpoint, capability, route-packet field, journal decision, catalog fact). No "based on my analysis" framing; cites only.
+5. **Host-native question** — exactly one blocking ask widget with 2–4 options; one option marked recommended; one option always lets the user inspect evidence (*"Pause — show me &lt;source&gt;"*) so they can drill in without restarting.
 
-1. Upstream route-packet inputs handed off by the previous skill (`selectedScenario`, `capabilities`, `appType`, `quickStartSpec`, `catalogSpec`, etc.).
-2. Codebase evidence — invoke `analyze-codebase` (or reuse a prior analysis from the journal/route packet) when the user has a reachable codebase. Use detected tech stack, capabilities, integrations, and configuration as primary signal.
-3. Journal evidence — `monaiq_journal` decisions, prior recommendations, prior checkpoints, prior validation outcomes.
-4. Catalog/profile state — `product`, `product_feature`, `offering`, `feature_offering`, `profile` reads.
-5. Conversation evidence captured in the route packet's `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, and `recommendationRationale`.
-6. Resource patterns — `monaiq://patterns/*`, `monaiq://domain/*`, `monaiq://platforms/*`.
+**Recommendation-First, evidence-cited.** The order of elements 3 and 4 is binding. Recommendation comes BEFORE evidence. Evidence is a cite, not a preamble. This is the core difference between a directive assistant and a research assistant.
 
-Only when all relevant sources are exhausted, ask the **narrowest** possible question, framed explicitly as an evidence gap rather than as the default discovery path.
+**Sample turn (greenfield, getting-started skill).**
 
-**Required response shape for any strategic recommendation.**
+```
+[Phase: Onboarding → Catalog]
+You're at the catalog gate. Next forward action: confirm a starter catalog so we
+can scaffold the SDK.
 
-- Evidence summary (one or two lines: what was inferred and from where).
-- 2–3 options as a short table or bullets, each with trade-offs.
-- One option marked as the recommendation, with the reasoning tied to the evidence summary.
-- A confirmation prompt that maps to the owning checkpoint (e.g., `CHECKPOINT-SCENARIO-CHOICE`, `CHECKPOINT-PRICING-APPROVAL`, `CHECKPOINT-PRE-CATALOG-MUTATION`) — not an open-ended question.
-- Anti-pattern phrases to avoid as defaults: *"What features does your app/product have?"*, *"What licensing model do you want?"*, *"Which monetization approach should we use?"*, *"You decide which features to monetize."* These are permitted only after the evidence path has been attempted and explicitly judged insufficient, and even then must be the narrowest possible question.
+I'd start with product "Acme Studio", two features (`manage-users` access gate,
+`bulk-export` rate-limit 100/day), and three offerings (Free, Pro $19/mo,
+Enterprise unlimited). This is the smallest catalog that unblocks SDK setup;
+we refine pricing in the catalog gate.
 
-**Anti-patterns.**
+Cites:
+  • Project name from `Acme.Studio.csproj`
+  • `[Authorize]` on `AdminController` → manage-users gate
+  • `BulkExportController` 100-row default → bulk-export rate-limit
 
-- Asking the user to choose what to monetize, which model to use, or which tiers to define before running `analyze-codebase` (when a codebase exists), reading the journal, or pulling existing catalog state.
-- Presenting a flat menu of options with no recommendation and no rationale.
-- Treating an unanswered upstream input as a reason to ask the user instead of invoking the upstream skill that produces it.
-- Re-asking decisions already captured in the journal or route packet.
+[host-native question]
+  ► Approve starter catalog and proceed (recommended)
+  ▸ Adjust features before approving
+  ▸ Adjust pricing before approving
+  ▸ Pause — show me analyze-codebase output first
+```
 
-**When the user explicitly defers ("you decide", "figure it out").** Treat this as authorization to apply the recommended option. Continue under the recommendation, record the deferral and rationale in the journal, and surface the final choice at the owning checkpoint for confirmation. Do not bounce the question back as a follow-up — that is the failure mode this principle exists to prevent.
+The same five elements adapt naturally to other situations (resume, mid-skill, handoff, validation-failure, completion). The agent does not need separate templates per situation; element 2 (gate line) carries the situational variance.
 
-See `_shared/response-patterns.md` "Evidence Backing" for the canonical compact technical-backing shape, and the `Tool Operation Rules` below for the read-first tool ordering each skill must respect.
+**Anti-patterns (do not emit).**
+
+- Open question as the lead: *"What features does your app have?"*, *"What licensing model do you want?"*, *"How would you like to charge?"*
+- Book-report framing: *"Based on my analysis, …"*, *"Evidence suggests …"*, *"After researching …"* — strip these phrases entirely; the cite block carries the evidence
+- Flat menu without recommendation: *"Here are 3 options, which would you like?"*
+- Non-blocking ask: *"Let me know if you want to proceed"*, *"Feel free to pick"* — must use the host's blocking widget
+- Rationale paragraph longer than one sentence; cites longer than one line each
+- Reply that does not open with `[Phase: …]`
+- Reply that introduces a new question without first restating the gate
+
+**Cross-host question parity.**
+
+| Host | Mechanism |
+|---|---|
+| GitHub Copilot (VS Code) | `vscode_askQuestions` — recommended flag, multi-select, free text supported |
+| Claude Code | `AskUserQuestion` — equivalent option/free-text shape |
+| Codex CLI / headless runtimes | structured numbered options in chat; require numeric reply before proceeding |
+
+Skills cite "host-native question" by name and never inline a host-specific call.
+
+**Evidence sources, in priority order.** Skills consult these before composing the recommendation:
+
+1. Upstream route-packet inputs from the previous skill (`selectedScenario`, `capabilities`, `appType`, `quickStartSpec`, `catalogSpec`, etc.)
+2. Codebase evidence — invoke or reuse `analyze-codebase` when a codebase is reachable
+3. Journal evidence — prior `monaiq_journal` decisions, checkpoints, validation outcomes
+4. Catalog/profile state — `product`, `product_feature`, `offering`, `feature_offering`, `profile` reads
+5. Conversation cues already captured in the route packet
+6. Resource patterns — `monaiq://patterns/*`, `monaiq://domain/*`, `monaiq://platforms/*`
+
+If evidence is thin, the recommendation IS *"scope down — let me run `analyze-codebase` first"* with that as the marked option in the host-native question. Never lead with an open question because evidence is unavailable; lead with the smallest action that produces evidence.
+
+**When the user defers ("you decide", "figure it out").** Treat as authorization to apply the recommended option. Continue under the recommendation, journal the deferral, surface the final choice at the owning checkpoint for confirmation. Do not bounce the question back — that is the failure mode this section exists to prevent.
+
+**Platform-agnostic source.** Skills must not embed framework-specific code, package names, or API surface (e.g., React `featureId` vs .NET `FeatureKey`). Per-stack guidance is owned by `monaiq://sdk/{stack}/setup` resources and the implement-* tools' server-side responses. SDK changes update those; plugin source stays stable.
 
 ## Tool Operation Rules
 

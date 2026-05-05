@@ -41,7 +41,8 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 
 <workflow>
 1. Run `_shared/workflows/startup.md` for `profile-onboarding`.
-2. Establish a session with `register_or_login`, then call `profile` to detect `ProfileStatus`, `ResellerStatus`, and `IssuerClientId`.
+2. **Response Pattern.** Follow `_shared/protocols.md` § Response Pattern. The gate this skill owns is **profile status + terms acceptance**. Evidence sources, in priority order: `register_or_login` session result, `profile` (`ProfileStatus`, `ResellerStatus`, `IssuerClientId`), prior journal decisions, route packet. The recommendation is the next forward action that unblocks catalog/checkout/implementation; the host-native question lets the user proceed, view terms/privacy, or pause.
+3. Establish a session with `register_or_login`, then call `profile` to detect `ProfileStatus`, `ResellerStatus`, and `IssuerClientId`.
 3. Present status in business-readable terms: what the account can do now, what is blocked, and which next action unblocks catalog, checkout, or implementation work.
 4. Retrieve reseller credentials only when needed for catalog/checkout setup or explicitly requested. Never write raw `ApiKey`, `EncodedCredential`, `.env`, user-secrets, or secret-bearing values into prompts, `.monaiq`, summaries, docs, or generated plugin output.
 5. If the user wants to accept terms, stop at `CHECKPOINT-PRE-TERMS-ACCEPTANCE`, follow `_shared/workflows/checkpoint.md`, present the terms/privacy review state, record the user's approval result, then call `profile` step 4 only after approval.

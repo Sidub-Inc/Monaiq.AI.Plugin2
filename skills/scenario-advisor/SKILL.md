@@ -45,11 +45,10 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 <workflow>
 1. Run `_shared/workflows/startup.md` for `scenario-advisor`.
 2. Resolve `monaiq://patterns/scenarios`, `monaiq://domain/model`, and platform resources such as `monaiq://platforms/api-surface/{platform}` or `monaiq://platforms/pitfalls/{platform}` when the stack is known before presenting options. Stop before recommendation if scenario building blocks or domain context are unavailable.
-3. Apply the Evidence-First Recommendation Principle in `_shared/protocols.md`. Infer application type from `analyze-codebase` capabilities, tech stack, route packet, and conversation evidence. If a codebase is reachable but no analysis evidence exists, route to `analyze-codebase` first rather than asking the user to pick an app type.
-4. Present the recommendation using `_shared/response-patterns.md` "Evidence Backing" plus app-type inference rationale.
-5. Present 2–3 scenario options with trade-offs and explicitly mark one as the recommendation tied to the evidence summary. Do not present a flat menu without a recommendation; alternatives appear only when they resolve real ambiguity.
-6. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario for pricing design. If the user defers ("you decide"), apply the recommended scenario, record the deferral and rationale in the journal, and surface the final choice at this checkpoint — do not return the question to the user.
-7. Output `selectedScenario` and `appType` for `design-monetization`, coalesce scenario choice, checklist progress, and handoff context into the completion workflow, then call `skill_completed` once.
+3. **Response Pattern.** Follow `_shared/protocols.md` § Response Pattern. The gate this skill owns is **scenario choice**. Evidence sources, in priority order: `analyze-codebase` capabilities + tech stack, route packet `appType`, prior journal decisions, `monaiq://patterns/scenarios`, conversation cues. If a codebase is reachable but no analysis evidence exists, route to `analyze-codebase` first.
+4. Present 2–3 scenario options with trade-offs and exactly one marked as the recommendation tied to the evidence cite. The host-native question lets the user approve, swap to an alternative, or pause to inspect `monaiq://patterns/scenarios`.
+5. Use `CHECKPOINT-SCENARIO-CHOICE` before locking the recommended scenario for pricing design.
+6. Output `selectedScenario` and `appType` for `design-monetization`, coalesce scenario choice + checklist progress + handoff context into the completion workflow, then call `skill_completed` once.
 </workflow>
 
 <reference>

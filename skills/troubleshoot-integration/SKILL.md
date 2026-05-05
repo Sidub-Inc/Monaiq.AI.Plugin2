@@ -40,7 +40,8 @@ For `CHECKPOINT-APPLY-FIX`, `CHECKPOINT-PRE-BUSINESS-LOGIC-EDIT`, validation-rem
 
 <workflow>
 1. Run `_shared/workflows/startup.md` for `troubleshoot-integration`.
-2. Fetch `monaiq://troubleshooting` before diagnosis. When the SDK stack is known, also fetch `monaiq://sdk/{stack}/setup`; supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
+2. **Response Pattern.** Follow `_shared/protocols.md` § Response Pattern. The gate this skill owns is **diagnosis + targeted fix**. Evidence sources, in priority order: error text + stack trace + HTTP status + validation command/result, affected code/config area in `targetProject`, recent journal decisions and `record_validation_failure` entries, profile/catalog/offering state, `monaiq://troubleshooting`, `monaiq://sdk/{stack}/setup`. Per-stack remediation shapes live in `monaiq://sdk/{stack}/setup` and `monaiq://troubleshooting` — do not embed framework-specific code in this skill source.
+3. Fetch `monaiq://troubleshooting` before diagnosis. When the SDK stack is known, also fetch `monaiq://sdk/{stack}/setup`; supported concrete setup resources are `monaiq://sdk/dotnet/setup`, `monaiq://sdk/node/setup`, and `monaiq://sdk/react/setup`.
 3. Capture the symptom from available evidence first: error text, stack trace, HTTP status, affected operation, relevant code/config area, recent journal decisions, profile/catalog/offering state, and validation command/result when available.
 4. Classify the issue as setup, auth, validation, consumption, or checkout. Ask the user only when evidence cannot identify the category or missing input blocks diagnosis.
 5. Present the diagnosis using `_shared/response-patterns.md` "Evidence Backing".
