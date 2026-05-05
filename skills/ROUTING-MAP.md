@@ -14,6 +14,7 @@ Executable Monaiq workflow protocol. Direct skill invocation is first-class; the
 
 <process_steps>
 1. Treat natural licensing or monetization prompts as `getting-started` unless the request already has a fresh route packet and journal state.
+1.5. If `.monaiq/STATE.md` exists in the consumer project root, this is a returning user. Invoke the **Host-Native Ask Pattern** (see `_shared/protocols.md` § Host-Native Ask Pattern) with: (1) "Continue from [last checkpoint]", (2) "Start fresh", (3) "Show journal". **Block until answered before any dispatch.** Route: **Continue** → reuse existing route packet and proceed to step 5; **Start fresh** → treat as new user, proceed to step 2; **Show journal** → display `.monaiq/JOURNAL.md`, re-present step 1.5.
 2. For direct skill invocation, warn once if the custom agent cannot be activated, then reuse a fresh state packet or call `monaiq_journal get_state` / `monaiq_journal init`, apply returned .monaiq/* file operations, call `skill_started` for a new or stale user-visible journey, enforce hard checkpoints, and stop before consequential work when prerequisites are missing.
 3. Consume the master journey checklist from `monaiq://protocols/implementation-journal` and `.monaiq/STATE.md`; route readiness should come from backend facts plus checklist gates, not transcript memory.
 4. Preserve the exact route packet fields: `scenario`, `targetApp`, `platform`, `profileState`, `catalogState`, `codeEvidenceSummary`, `journalEvidenceSummary`, `assumptions`, `recommendedSkill`, `recommendationRationale`, `checkpointName`, and `authorizedBy`.
@@ -56,6 +57,8 @@ Direct skill invocation compatibility fallback: warn once, fetch the implementat
 
 ## Resume Scenario
 
+> **Note:** The Resume Scenario is now an executable step in `<process_steps>` above (step 1.5). This section provides supplementary context.
+
 Returning users with `.monaiq/STATE.md` skip broad re-intake. Render a status summary with current checklist gate, last checkpoint, open blockers/questions, backend summary (profile, products, offerings, SDK), and one primary next skill recommendation. Offer one or two alternatives only when backend facts and journal state make multiple routes plausible.
 
 ## Intent Dispatch Table
@@ -72,7 +75,7 @@ The dispatcher matches intent, checks prerequisites, and hands off; it does not 
 | "Why does validation fail?" | `troubleshoot-integration` | Direct Tier 1 diagnostic route; fixes still require checkpoints. |
 | "What is FeatureKey?" | `domain-reference` | Read-only domain route. |
 
-When two routes are plausible, ask one short question with 2-3 options, then dispatch to the selected specialist.
+When two or more routes are plausible, invoke the **Host-Native Ask Pattern** (see `_shared/protocols.md` § Host-Native Ask Pattern) with the specific options, then dispatch to the selected specialist.
 
 Clear specialist intent may bypass `getting-started` only with satisfied route and journal prerequisites. Required prerequisite categories are profile/session state, catalog/product/offering state, SDK integration state, codebase evidence state, journal/route packet freshness, and required MCP journal/resource readiness. Missing prerequisites route to the narrowest missing prerequisite instead of a one-off tool call.
 

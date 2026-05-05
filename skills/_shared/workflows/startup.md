@@ -10,6 +10,7 @@ Use this workflow before catalog mutation, SDK/config edits, feature implementat
    - For each `writeFile` operation: create or overwrite the file at `path` with `content`.
    - After applying, verify that `.monaiq/STATE.md` and `.monaiq/JOURNAL.md` exist and `.monaiq/CHECKPOINTS` directory exists.
    - If any expected file is absent after application, report the failure and do not continue.
+   > **Scope note:** The **File Operation Application Protocol** applies to every `monaiq_journal` call throughout skill execution — not only the `init` call at startup. Whenever a journal call returns `fileOperations`, apply them immediately before continuing the workflow.
 5. Verify `.monaiq/STATE.md` contains the master journey checklist. Restore it through the journal protocol before substantive work if absent.
 6. Call `monaiq_journal skill_started` only when starting a new user-visible journey, resuming after stale or missing state, or switching to a materially different specialist without a handoff packet. Do not emit lifecycle journal calls for every internal handoff when the caller already passed fresh state.
 7. For new or materially changed journeys, save and present `CHECKPOINT-WORKFLOW-START` before substantive work.

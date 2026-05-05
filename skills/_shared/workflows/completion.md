@@ -7,7 +7,7 @@ Before a skill exits or hands off to another skill, record only meaningful compl
 3. Call `monaiq_journal update_checklist_progress` only for gates owned by the current skill, and only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence are recorded.
 4. Save `CHECKPOINT-SKILL-COMPLETE` only when the completion itself is consequential: files or backend state changed, validation status changed, a downstream skill needs durable proof, or the user-visible journey gate changed. Do not save it after read-only explanation or when `skill_completed` plus the state packet is enough.
 5. Include a no-secret `proofOfDone` packet in `CHECKPOINT-SKILL-COMPLETE` when the checkpoint is used.
-6. Apply returned file operations locally and verify expected `.monaiq` files after each journal action that returns file operations.
+6. After every `monaiq_journal` call in this skill — `skill_started`, `update_checklist_progress`, `save_checkpoint`, `skill_completed`, and any other journal call that returns `fileOperations` — apply them immediately using the **File Operation Application Protocol** in `_shared/protocols.md`. Do not defer or coalesce file operation application. Verify expected `.monaiq` files after each application.
 7. Call `monaiq_journal skill_completed` once per user-visible skill outcome, not after every internal tool step.
 8. Recommend the next specialist skill or stop with unresolved risks.
 9. **Next Step Signal (mandatory):** emit as the final line of every completion output:

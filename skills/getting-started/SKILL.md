@@ -36,18 +36,25 @@ Follow the Direct Invocation Contract in `_shared/protocols.md` (mutation-capabl
 </direct-invocation-contract>
 
 <process_steps>
-1. Fetch `monaiq://protocols/implementation-journal` and read the shared route/checkpoint contract plus `_shared/workflows/startup.md`.
-2. Call `monaiq_journal get_state` unless a fresh state packet is already available in this turn; when no state exists, call `monaiq_journal init` and apply returned `.monaiq/*` file operations under the consumer project root.
+1. Call `monaiq_journal get_state`; if no state exists, call `monaiq_journal init` and apply all returned `.monaiq/*` file operations using the **File Operation Application Protocol** in `_shared/protocols.md` before continuing.
+   - **If `resumeAvailable == true`:** render a **Status Summary** using `_shared/response-patterns.md` (current gate, last checkpoint, open blockers/questions, backend summary: profile, products, offerings, SDK, and one primary next skill recommendation). Then invoke the **Host-Native Ask Pattern** (see `_shared/protocols.md` § Host-Native Ask Pattern) with these three options: (1) "Continue from [last checkpoint]", (2) "Start fresh", (3) "Show journal". **Block until the user responds before any other step.**
+     - **Continue** → skip to step 7 (CHECKPOINT-WORKFLOW-START was already recorded in the prior session; do not re-present it)
+     - **Start fresh** → proceed to step 2 as a new-user intake (all steps including step 6 apply)
+     - **Show journal** → display `.monaiq/JOURNAL.md` content, then re-present step 1's widget
+   - **If `resumeAvailable == false`:** proceed to step 2.
+2. Fetch `monaiq://protocols/implementation-journal` and read the shared route/checkpoint contract plus `_shared/workflows/startup.md`.
 3. Verify `.monaiq/STATE.md`, `.monaiq/JOURNAL.md`, and `.monaiq/CHECKPOINTS` exist when the returned operations indicate they should. Verify the master journey checklist is present in `.monaiq/STATE.md`; if it is absent, use `monaiq_journal init` or `update_checklist_progress` from `monaiq://protocols/implementation-journal` to restore the compact resume/control packet before routing.
 4. Call `monaiq_journal skill_started` for `getting-started` only for a new, stale, or materially changed journey; skip it when resuming from a fresh state packet.
-5. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, `activePlatform`, `targetProject`, `outOfScopePlatforms`, intended outcome, and any inferred assumptions; continue only after recording the approval result.
-6. Inspect profile, catalog, code, journal evidence, and master journey checklist gates before asking detailed questions.
-7. Emit one route packet with the exact shared fields, including `activePlatform`, `targetProject`, and `outOfScopePlatforms`, and hand off to the narrowest missing prerequisite or specialist skill. Emit the **Next Step Signal** as defined in `_shared/workflows/completion.md` step 9:
+5. Inspect profile, catalog, code, journal evidence, and master journey checklist gates before asking detailed questions.
+6. Present `CHECKPOINT-WORKFLOW-START` with scenario, target app/platform, `activePlatform`, `targetProject`, `outOfScopePlatforms`, intended outcome, and any inferred assumptions; continue only after recording the approval result. **Omit this step when a returning user chose "Continue" in step 1 — their prior session already recorded this checkpoint.**
+7. Inspect profile, catalog, code, journal evidence, and master journey checklist gates before asking detailed questions. (Returning users who chose "Continue" resume here directly after step 1.)
+8. Emit one route packet with the exact shared fields, including `activePlatform`, `targetProject`, and `outOfScopePlatforms`, and hand off to the narrowest missing prerequisite or specialist skill. Emit the **Next Step Signal** as defined in `_shared/workflows/completion.md` step 9:
    - When routing to catalog creation: `**Next:** Invoke \`manage-catalog\` — create your product catalog so the SDK has offerings to enforce.`
    - When routing to SDK integration: `**Next:** Invoke \`implement-licensing\` — integrate the Monaiq SDK into your application to enforce licensing.`
 </process_steps>
 
 <resume-mode>
+<!-- Note: Resume Mode is now an executable pre-flight gate in <process_steps> step 1. This section provides supplementary guidance for the Resume route. -->
 When `.monaiq/STATE.md` exists, enter Resume Mode before new intake. Render a Status Summary using `_shared/response-patterns.md`: current gate, last checkpoint, open blockers/questions, backend summary (profile, products, offerings, SDK), and one primary next skill recommendation. Only present 1-2 alternatives when the route is genuinely ambiguous. Do not re-ask questions already answered by the route packet, journal evidence, or backend facts.
 </resume-mode>
 

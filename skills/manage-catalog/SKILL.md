@@ -44,7 +44,7 @@ For `CHECKPOINT-PRE-CATALOG-MUTATION`, `CHECKPOINT-PRE-PUBLISH-OFFERING`, and an
 6. Stop at `CHECKPOINT-PRE-CATALOG-MUTATION` before any `product`, `product_feature`, `offering`, or `feature_offering` create/update/delete call. Record the user's result before tool calls run.
 7. Execute catalog mutations in dependency order: product, features, offerings, feature assignments. Keep offerings in Draft unless the user explicitly approves publication through `CHECKPOINT-PRE-PUBLISH-OFFERING`.
 8. Perform mandatory read-back verification after create/update of paid-tier assignments: list `feature_offering` rows for each paid offering, verify intended `ServiceAccessLevel` or rate-limit values, and stop on mismatches before claiming catalog completion.
-9. Coalesce changed catalog entities, read-back proof, checklist progress, preserved route boundaries, and `catalogSpec` handoff through `_shared/workflows/completion.md`. Call `update_checklist_progress` for catalog and offerings only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` only when useful, apply returned operations, call `skill_completed` once, and hand off persisted `catalogSpec` plus `activePlatform`, `targetProject`, and `outOfScopePlatforms` to `implement-licensing`.
+9. Coalesce changed catalog entities, read-back proof, checklist progress, preserved route boundaries, and `catalogSpec` handoff through `_shared/workflows/completion.md`. Call `update_checklist_progress` for catalog and offerings only after source skill, relevant MCP tool, canonical resources, and checkpoint/journal evidence prove the gate is complete before marking the checklist gate complete. Save `CHECKPOINT-SKILL-COMPLETE` with `proofOfDone` only when useful, apply returned operations using the **File Operation Application Protocol** in `_shared/protocols.md`, call `skill_completed` once, and hand off persisted `catalogSpec` plus `activePlatform`, `targetProject`, and `outOfScopePlatforms` to `implement-licensing`. Emit the **Next Step Signal**: `**Next:** Invoke \`implement-licensing\` — integrate the Monaiq SDK into your application to enforce licensing.`
 </workflow>
 
 <reference>
@@ -62,13 +62,13 @@ For `CHECKPOINT-PRE-CATALOG-MUTATION`, `CHECKPOINT-PRE-PUBLISH-OFFERING`, and an
 
 ### Interaction 1: starter product and features
 
-Recommend a starter product (name + derived code) and feature set inferred from upstream evidence. Map binary capabilities to `ProductAccessFeature`, usage-counted capabilities to `ProductRateLimitFeature`; derive feature keys lowercase-hyphenated from the capability name. Present as the default; the host-native question lets the user approve, refine features, refine the product name, or pause to inspect the source analysis.
+Recommend a starter product (name + derived code) and feature set inferred from upstream evidence. Map binary capabilities to `ProductAccessFeature`, usage-counted capabilities to `ProductRateLimitFeature`; derive feature keys lowercase-hyphenated from the capability name. Present as the default; invoke the **Host-Native Ask Pattern** (see `_shared/protocols.md` § Host-Native Ask Pattern) with options: approve the starter catalog, refine features, refine the product name, or pause to inspect the source analysis. Block until the user responds.
 
 Confirm via `CHECKPOINT-PRE-CATALOG-MUTATION` before any `product` / `product_feature` create call. Smart defaults: Product Status = `Active`, feature key derived from name.
 
 ### Interaction 2: starter pricing
 
-Ask how the user wants to charge, or use `quickStartSpec.pricingChoice` if provided.
+Ask how the user wants to charge, or use `quickStartSpec.pricingChoice` if provided. When asking, invoke the **Host-Native Ask Pattern** (see `_shared/protocols.md` § Host-Native Ask Pattern) with the pricing options listed below as option labels. Block until the user responds.
 
 Present pricing options in plain language:
 - **"Free trial + paid subscription"** → Create a Trial offering (14 days, $0) + Subscription offering ($X/month)
